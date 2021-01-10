@@ -1,0 +1,5 @@
+.DS_Store
+vendor/
+cache/
+public/logs/
+.user.ini

@@ -1,0 +1,22 @@
+{
+    "name": "nirvana72/phprest",
+    "description": "模仿 caoym/phpboot, 以学习为目的重写",
+    "authors": [
+        {
+            "name": "nijia",
+            "email": "15279663@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "php-di/php-di": "^6.0",
+        "doctrine/annotations": "^1.11",
+        "phpdocumentor/reflection-docblock": "~5.2.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhpRest\\": "src/",
+            "App\\": "App/"
+        }
+    }
+}
