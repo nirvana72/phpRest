@@ -48,7 +48,7 @@ class Controller
      */
     public function addRoute($actionName, Route $route) 
     {
-        !array_key_exists($actionName, $this->routes) or \PhpBoot\abort("路由重复 {$this->classPath} {$actionName}");
+        !array_key_exists($actionName, $this->routes) or \PhpRest\abort("路由重复 {$this->classPath} {$actionName}");
         $this->routes[$actionName] = $route;
     }
 

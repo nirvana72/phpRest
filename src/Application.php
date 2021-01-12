@@ -92,9 +92,14 @@ class Application
      */
     private function loadRoutesFromClass($classPath) 
     {
-        $controller = $this->controllerBuilder->build($classPath);
-        foreach ($controller->routes as $actionName => $route) {
-            $this->routes[] = [$route->method, $route->uri, [$classPath, $actionName]];
+        try {
+            $controller = $this->controllerBuilder->build($classPath);
+            foreach ($controller->routes as $actionName => $route) {
+                $this->routes[] = [$route->method, $route->uri, [$classPath, $actionName]];
+            }
+        } catch (\Throwable $e) {
+            $exceptionHandler = $this->get(IExceptionHandler::class);
+            $exceptionHandler->render($e)->send();
         }
     }
 
@@ -104,6 +109,7 @@ class Application
     public function dispatch() 
     {
         $app = $this;
+        // 把解析注解收集的信息，注册成FastRoute路由
         $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) use($app) {
             foreach($app->routes as $route) {
                 list($method, $uri, $callable) = $route;
@@ -120,13 +126,25 @@ class Application
         }
         $uri = rawurldecode($uri);
 
+        // FastRoute匹配当前路由
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
-        if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {
-            list($classPath, $actionName) = $routeInfo[1];
-            $controller = $app->controllerBuilder->build($classPath);
-            $routeInstance = $controller->getRoute($actionName);
-            $response = $routeInstance->invoke($app, $request, $classPath, $actionName);
-            $response->send();
+        try {
+            if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {
+                list($classPath, $actionName) = $routeInfo[1];
+                $controller = $app->controllerBuilder->build($classPath);
+                $routeInstance = $controller->getRoute($actionName);
+                $response = $routeInstance->invoke($app, $request, $classPath, $actionName);
+                $response->send();
+            } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
+                \PhpRest\abort("{$uri} 访问地址不存在");
+            } elseif ($routeInfo[0] == \FastRoute\Dispatcher::METHOD_NOT_ALLOWED) {
+                \PhpRest\abort("{$uri} 不支持 {$httpMethod} 请求");
+            } else {
+                \PhpRest\abort("unknown dispatch return {$routeInfo[0]}");
+            }
+        } catch (\Throwable $e) {
+            $exceptionHandler = $app->get(IExceptionHandler::class);
+            $exceptionHandler->render($e)->send();
         }
     }
 }

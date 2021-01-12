@@ -17,7 +17,7 @@ class ParamHandler
         list($type, $name, $doc) = self::resolveParam($ann->description);
 
         $paramMeta = $route->requestHandler->getParamMeta($name);
-        $paramMeta or \PhpBoot\abort("{$controller->classPath}->{$target} 参数 {$paramName} 不存在");
+        $paramMeta or \PhpRest\abort("{$controller->classPath}::{$target} 注解参数 {$name} 没有被引用");
         $paramMeta->description = $doc;
         
         if ($type === 'int') $type = 'integer';

@@ -16,10 +16,13 @@ class ResponseRender implements IResponseRender
         }
 
         $response = new Response();
-        $response->headers->set('Content-Type', 'application/json');
+        
+        if ($return !== null) {
+            $response->headers->set('Content-Type', 'application/json');
+            $value = json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $response->setContent($value);
+        }
 
-        $value = json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $response->setContent($value);
         return $response;
     }
 }
