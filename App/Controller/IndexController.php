@@ -8,30 +8,33 @@ namespace App\Controller;
  */
 class IndexController
 {
-    /**
-    * @Inject("env")
-    */
-    private $env;
-
-    /**
-     * @Inject
-     * @var \App\Service\TestService
-     */
-    private $testService;
-
-    public function index() {
+    // 这个方法没写注解，不会被加载
+    public function index() 
+    {
         echo $this->env;
     }
 
     /**
-     * test
+     * test1
      *
-     * @route GET /test
-     * @param int $id id
-     * @param string $name name
+     * @route GET /test1
      */
-    public function test($id, $name) {
-        echo "IndexController.test, id = {$id}, name = {$name}, env = {$this->env}";
-        $this->testService->test($id, $name);
+    public function test1() 
+    {
+        echo "IndexController.test1 <br>";
+    }
+
+    /**
+     * test2
+     *
+     * @route GET /test2
+     * @param int $p1 p1 {@v integer}
+     * @param string $p2 p2
+     * @param string $p3 p3
+     */
+    public function test2($p1, $p3, $p2) 
+    {
+        echo "IndexController.test2 <br>";
+        echo "p1={$p1}, p2={$p2}, p3={$p3}";
     }
 }

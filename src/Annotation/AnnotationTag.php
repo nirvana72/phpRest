@@ -1,15 +1,20 @@
 <?php
 namespace PhpRest\Annotation;
 
-class AnnotationTag
+/**
+ * 每一个 @开头的注解内容都是一个Tag
+ */
+class AnnotationTag extends AnnotationBase
 {
     /**
+     * 所属的block对象
      * @var AnnotationBlock|null
      */
     public $parent;
 
     /**
-     * @var AnnotationBlock[]
+     * tag 后面 {@v ... } | {@bind ...}
+     * @var AnnotationTag[]
      */
     public $children = [];
 

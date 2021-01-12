@@ -1,0 +1,68 @@
+<?php
+namespace PhpRest\Controller;
+
+class Controller
+{
+    /**
+     * path /xxx
+     * @var string
+     */
+    public $prefix;
+
+    /**
+     * 类命名空间
+     * @var string
+     */
+    public $classPath;
+
+    /**
+     * @var string
+     */
+    public $summary = '';
+
+    /**
+     * @var string
+     */
+    public $description = '';
+
+    /**
+     * 一个controller下的路由集合
+     * @var Route[]
+     */
+    public $routes = [];
+    
+    /**
+     * @param string $classPath controller类的命名空间
+     */
+    public function __construct($classPath) 
+    {
+        $this->classPath = $classPath;
+    }
+
+    /**
+     * 添加路由
+     * 
+     * @param Route $route
+     * @param string $actionName class method
+     * @return void
+     */
+    public function addRoute($actionName, Route $route) 
+    {
+        !array_key_exists($actionName, $this->routes) or \PhpBoot\abort("路由重复 {$this->classPath} {$actionName}");
+        $this->routes[$actionName] = $route;
+    }
+
+    /**
+     * 获取指定名称的路由
+     * 
+     * @param $actionName
+     * @return Route|false
+     */
+    public function getRoute($actionName) 
+    {
+        if (array_key_exists($actionName, $this->routes)){
+            return $this->routes[$actionName];
+        }
+        return false;
+    }
+}
