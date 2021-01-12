@@ -2,6 +2,7 @@
 namespace PhpRest;
 
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use PhpRest\Exception\IExceptionHandler;
 use PhpRest\Exception\ExceptionHandler;
 use PhpRest\Render\IResponseRender;
@@ -31,7 +32,7 @@ class Application
     {
         $default = [
             // 默认request对象来自 symfony
-            Request::class => \DI\factory([Request::class, 'createFromGlobals']),
+            Request::class => \DI\factory([Application::class, 'createRequestFromSymfony']),
             // 默认错误处理器
             IExceptionHandler::class => \DI\create(ExceptionHandler::class),
             // 默认输出处理器
@@ -149,5 +150,18 @@ class Application
             $exceptionHandler = $app->get(IExceptionHandler::class);
             $exceptionHandler->render($e)->send();
         }
+    }
+
+    public static function createRequestFromSymfony()
+    {
+        $request = Request::createFromGlobals();
+        if (0 === strpos($request->headers->get('CONTENT_TYPE'), 'application/json')
+            && in_array(strtoupper($request->server->get('REQUEST_METHOD', 'GET')), array('POST', 'PUT', 'DELETE', 'PATCH'))
+        ) {
+            $data = $request->toArray(); // method was introduced in Symfony 5.2.
+            $request->request = new ParameterBag($data);
+        }
+
+        return $request;
     }
 }
