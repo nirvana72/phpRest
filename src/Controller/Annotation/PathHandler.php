@@ -12,6 +12,6 @@ class PathHandler
     public function __invoke(Controller $controller, $ann) 
     {
         // controller 注解上的 path, 可以为空
-        $controller->prefix = $ann->description;
+        $controller->uriPrefix = $ann->description;
     }
 }

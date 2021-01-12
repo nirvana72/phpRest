@@ -130,6 +130,9 @@ class Application
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
         try {
             if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {
+                if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
+                    $request->attributes->add($routeInfo[2]);
+                }
                 list($classPath, $actionName) = $routeInfo[1];
                 $controller = $app->controllerBuilder->build($classPath);
                 $routeInstance = $controller->getRoute($actionName);

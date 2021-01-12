@@ -7,7 +7,7 @@ class Controller
      * path /xxx
      * @var string
      */
-    public $prefix;
+    public $uriPrefix;
 
     /**
      * 类命名空间

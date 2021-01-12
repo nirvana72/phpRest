@@ -17,8 +17,7 @@ class IndexController
     /**
      * test
      *
-     * @route DELETE /test/{p1}
-     * @param int $p1 p1
+     * @route GET /test/{p1:\d+}
      */
     public function test($p1) 
     {
