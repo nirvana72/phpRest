@@ -16,7 +16,10 @@ class Application
      */
     private $controllerBuilder;
 
-    /** @var \DI\Container */
+    /** 
+     * @Inject
+     * @var \DI\Container 
+     * */
     private $container;
 
     /** @var array */
@@ -46,20 +49,7 @@ class Application
         $builder->useAnnotations(true);
         $container = $builder->build();
 
-        $app = $container->make(self::class);
-        $app->container = $container;
-        return $app;
-    }
-
-    /**
-     * PHP-DI 获取注入对象
-     * 
-     * @param string $id
-     * @return object
-     */
-    public function get($id) 
-    {
-        return $this->container->get($id);
+        return $container->get(self::class);
     }
 
     /**
@@ -93,6 +83,7 @@ class Application
      */
     private function loadRoutesFromClass($classPath) 
     {
+        // TODO 这里把解析好的route对象缓存起来，在dispatch时不用再解析一次
         try {
             $controller = $this->controllerBuilder->build($classPath);
             foreach ($controller->routes as $actionName => $route) {
@@ -150,6 +141,17 @@ class Application
             $exceptionHandler = $app->get(IExceptionHandler::class);
             $exceptionHandler->render($e)->send();
         }
+    }
+
+    /**
+     * PHP-DI 获取依赖对象
+     * 
+     * @param string $id
+     * @return object
+     */
+    public function get($id) 
+    {
+        return $this->container->get($id);
     }
 
     public static function createRequestFromSymfony()
