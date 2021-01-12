@@ -22,10 +22,9 @@ class RouteHandler
         $actionName = $ann->parent->name;
         $methodUri  = $array[1];
         in_array($methodType, ['GET','POST','PUT','HEAD','PATCH','OPTIONS','DELETE']) or \PhpRest\abort("{$controller->classPath}::{$ann->parent->summary} @route 注解方法不支持");
-
+        // 反射类文件对象
         $classRef = new \ReflectionClass($controller->classPath);
         $method = $classRef->getMethod($actionName);
-        $methodParams = $method->getParameters();
         // 实例化一个路由对象
         $route = new Route();
         $route->method      = $methodType;
@@ -33,11 +32,12 @@ class RouteHandler
         $route->summary     = $ann->parent->summary;
         $route->description = $ann->parent->description;
         $route->requestHandler  = new RequestHandler();
-
+        // 遍历方法的参数，封装成 ParamMeta 对像
+        $methodParams = $method->getParameters();
         foreach ($methodParams as $param) {
             $paramName = $param->getName();
             $paramClass = $param->getClass();
-            if($paramClass){ // 如果参数是个Class
+            if($paramClass){ // 如果参数是个Class,否则(基础数据类型)这里是null
                 $paramClass = $paramClass->getName();
             }
             $meta = new ParamMeta();
@@ -45,7 +45,8 @@ class RouteHandler
             $meta->type        = $paramClass?:'mixed'; // 参数类型如不是类，这里先mixed, 在ParamAnn中根据注解内容重新定义
             $meta->isOptional  = $param->isOptional();
             $meta->default     = $param->isOptional()?$param->getDefaultValue():null;
-            
+            $meta->description = $paramName; // 默认参数描述为参数名，也就是说@param可以不写
+
             $route->requestHandler->paramMetas[] = $meta;
         }
         // 添加路由

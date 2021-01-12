@@ -1,8 +1,6 @@
 <?php
 namespace PhpRest\Validator;
 
-use PhpRest\Utils\TypeHint;
-
 /**
  * Validator
  *
@@ -32,7 +30,6 @@ class Validator extends \Valitron\Validator
                     $params = [$params];
                 }
                 call_user_func_array([$this, 'parent::rule'], array_merge([$rule, $fields], $params));
-
             }
             return $this;
         }

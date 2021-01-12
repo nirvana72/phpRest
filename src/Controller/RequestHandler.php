@@ -47,22 +47,20 @@ class RequestHandler
             $source = \JmesPath\search("request.{$meta->name}", $requestArray);
             if ($source !== null) {
                 $inputs[$meta->name] = $source;
+
+                // 验证参数规则
+                if($meta->validation) {
+                    $vld->rule($meta->validation, $meta->name);
+                }
             } else {
                 $meta->isOptional or \PhpRest\abort("缺少参数 '{$meta->name}'");
                 $inputs[$meta->name] = $meta->default;
-            }
-
-            if($meta->validation) {
-                $vld->rule($meta->validation, $meta->name);
             }
         }
 
         // 验证参数
         $vld = $vld->withData($inputs);
-        if ($vld->validate() === false) {
-            $error = json_encode($vld->errors(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            \PhpRest\abort($error);
-        }
+        $vld->validate() or \PhpRest\abort(json_encode($vld->errors()));
 
         $params = [];
         foreach($inputs as $_ => $val) {

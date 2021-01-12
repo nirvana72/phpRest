@@ -2,6 +2,10 @@
 namespace PhpRest;
 
 use Symfony\Component\HttpFoundation\Request;
+use PhpRest\Exception\IExceptionHandler;
+use PhpRest\Exception\ExceptionHandler;
+use PhpRest\Render\IResponseRender;
+use PhpRest\Render\ResponseRender;
 
 class Application
 {
@@ -25,7 +29,17 @@ class Application
      */
     public static function createDefault($conf = []) 
     {
+        $default = [
+            // 默认request对象来自 symfony
+            Request::class => \DI\factory([Request::class, 'createFromGlobals']),
+            // 默认错误处理器
+            IExceptionHandler::class => \DI\create(ExceptionHandler::class),
+            // 默认输出处理器
+            IResponseRender::class => \DI\create(ResponseRender::class),
+        ];
+
         $builder = new \DI\ContainerBuilder();
+        $builder->addDefinitions($default);
         $builder->addDefinitions($conf);
         $builder->useAutowiring(false);
         $builder->useAnnotations(true);
@@ -97,7 +111,7 @@ class Application
             }
         });
 
-        $request = Request::createFromGlobals();
+        $request = $app->get(Request::class);
         $httpMethod = $request->getMethod();
         $uri = $request->getRequestUri();
         // Strip query string (?foo=bar) and decode URI
@@ -111,7 +125,8 @@ class Application
             list($classPath, $actionName) = $routeInfo[1];
             $controller = $app->controllerBuilder->build($classPath);
             $routeInstance = $controller->getRoute($actionName);
-            $routeInstance->invoke($app, $request, $classPath, $actionName);
+            $response = $routeInstance->invoke($app, $request, $classPath, $actionName);
+            $response->send();
         }
     }
 }

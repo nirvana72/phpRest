@@ -2,7 +2,6 @@
 namespace PhpRest\Controller\Annotation;
 
 use PhpRest\Controller\Controller;
-use PhpRest\Utils\TypeHint;
 
 class ParamHandler
 {
@@ -20,8 +19,11 @@ class ParamHandler
         $paramMeta = $route->requestHandler->getParamMeta($name);
         $paramMeta or \PhpBoot\abort("{$controller->classPath}->{$target} 参数 {$paramName} 不存在");
         $paramMeta->description = $doc;
-        if($type) {
-            $paramMeta->type = TypeHint::normalize($type, $controller->classPath);
+        
+        if ($type === 'int') $type = 'integer';
+        if(in_array($type, ['integer', 'numeric'])) {
+            // 如果 type 是个基础验证对象
+            $paramMeta->validation = $type;
         }
     }
 
