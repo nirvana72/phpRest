@@ -16,6 +16,18 @@ class Controller
     public $classPath;
 
     /**
+     * 文件物理路径
+     * @var string
+     */
+    public $filePath;
+
+    /**
+     * 上次修改时间(验证缓存过期用)
+     * @var string
+     */
+    public $modifyTimespan;
+
+    /**
      * @var string
      */
     public $summary = '';

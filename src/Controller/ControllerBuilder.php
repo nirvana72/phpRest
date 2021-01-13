@@ -18,9 +18,16 @@ use phpDocumentor\Reflection\DocBlock\StandardTagFactory;
 use phpDocumentor\Reflection\DocBlockFactory;
 use phpDocumentor\Reflection\FqsenResolver;
 use phpDocumentor\Reflection\TypeResolver;
+use Doctrine\Common\Cache\Cache;
 
 class ControllerBuilder
 {
+    /**
+     * @Inject
+     * @var \Doctrine\Common\Cache\Cache
+     */
+    private $cache;
+
     private $annotationnHandlers = [
         [ClassHandler::class, 'class'],
         [PathHandler::class, "class.children[?name=='path']"],
@@ -34,27 +41,47 @@ class ControllerBuilder
 
     public function build($classPath) 
     {
-        $controller = new Controller($classPath);
-        $classRef = new \ReflectionClass($classPath) or \PhpRest\abort("load class $classPath failed");
-        $annotationReader = $this->buildAnnotationReader($classRef);
-        if ($annotationReader !== null) {
-            foreach ($this->annotationnHandlers as $handler) {
-                list($class, $expression) = $handler;
-                $annotations = \JmesPath\search($expression, $annotationReader);
-                if ($annotations !== null) {
-                  if($expression === 'class'){
-                      $annotations = [ $annotations ]; // class不会匹配成数组
-                  }
-                  foreach ($annotations as $annotation){
-                      $annotationHandler = new $class(); // 实例化 $annotationnHandlers[XXXHalder]
-                      $annotationHandler($controller, $annotation);
-                  }
+        $cacheKey = 'controllerBuilder::build' . md5($classPath);
+        $controller = $this->cache->fetch($cacheKey);
+
+        if ($controller === false || 
+            $controller->modifyTimespan !== filemtime($controller->filePath)) {
+           
+            // echo "测试输出：controllerBuilder::build {$classPath}<br>\r\n";
+            $controller = new Controller($classPath);
+            $classRef = new \ReflectionClass($classPath) or \PhpRest\abort("load class $classPath failed");
+            $controller->filePath = $classRef->getFileName();
+            $controller->modifyTimespan = filemtime($controller->filePath);
+            
+            $annotationReader = $this->buildAnnotationReader($classRef);
+            if ($annotationReader !== null) {
+                foreach ($this->annotationnHandlers as $handler) {
+                    list($class, $expression) = $handler;
+                    $annotations = \JmesPath\search($expression, $annotationReader);
+                    if ($annotations !== null) {
+                        if($expression === 'class'){
+                            $annotations = [ $annotations ]; // class不会匹配成数组
+                        }
+                        foreach ($annotations as $annotation){
+                            $annotationHandler = new $class();
+                            $annotationHandler($controller, $annotation);
+                        }
+                    }
                 }
             }
+            $this->cache->save($cacheKey, $controller);
         }
+
         return $controller;
     }
 
+    /**
+     * // TODO class可以不写注解， @path // 处理
+     * 解析controller文件 class 及 function 上的注解
+     * 
+     * @param ReflectionClass $classRef controller反射类
+     * @return AnnotationReader
+     */
     private function buildAnnotationReader($classRef) 
     {
         $docComment = $classRef->getDocComment();
@@ -80,6 +107,8 @@ class ControllerBuilder
     }
 
     /**
+     * 解析注解块
+     * 
      * @param string $docComment 注解内容
      * @return object
      */

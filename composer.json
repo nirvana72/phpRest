@@ -11,6 +11,7 @@
         "php": ">=7.0",
         "php-di/php-di": "^6.0",
         "doctrine/annotations": "^1.11",
+        "doctrine/cache": "~1.10",
         "phpdocumentor/reflection-docblock": "~5.2.2",
         "mtdowling/jmespath.php": "~2.6",
         "nikic/fast-route": "~1.3",

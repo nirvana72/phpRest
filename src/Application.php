@@ -7,6 +7,9 @@ use PhpRest\Exception\IExceptionHandler;
 use PhpRest\Exception\ExceptionHandler;
 use PhpRest\Render\IResponseRender;
 use PhpRest\Render\ResponseRender;
+use Doctrine\Common\Cache\Cache;
+use Doctrine\Common\Cache\ApcuCache;
+use Doctrine\Common\Cache\FilesystemCache;
 
 class Application
 {
@@ -22,7 +25,10 @@ class Application
      * */
     private $container;
 
-    /** @var array */
+    /** 
+     * 所有路由信息(非 Route 对象)
+     * @var array 
+     * */
     private $routes = [];
 
     /**
@@ -40,7 +46,16 @@ class Application
             IExceptionHandler::class => \DI\create(ExceptionHandler::class),
             // 默认输出处理器
             IResponseRender::class => \DI\create(ResponseRender::class),
+            // 缓存对象
+            Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', $_SERVER['DOCUMENT_ROOT'] . '/../cache/')
+            // Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class)
         ];
+
+        // if( function_exists('apcu_fetch') ) {
+        //     $default += [ Cache::class => \DI\create(ApcuCache::class) ];
+        // } else {
+        //     $default += [ Cache::class => \DI\create(FilesystemCache::class) ];
+        // }
 
         $builder = new \DI\ContainerBuilder();
         $builder->addDefinitions($default);
@@ -53,7 +68,7 @@ class Application
     }
 
     /**
-     * 加载controller
+     * 遍历加载物理文件controller
      * 
      * @param string $controllerPath controller所在目录
      * @param string $namespace controller所在命名空间
@@ -70,28 +85,28 @@ class Application
                     $this->loadRoutesFromClass($classPath);
                 }
             } else {
-                $this->loadRoutesFromPath($path, $namespace . '\\' . $entry);
+                $this->loadRoutesFromPath($path, $namespace . '\\' . $entry, $routes);
             }
         }
         $d->close();
     }
 
     /**
-     * 加载controller
+     * 遍历加载 controller 类
      * 
      * @param string $classPath controller命名空间全路径
      */
     private function loadRoutesFromClass($classPath) 
     {
-        // TODO 这里把解析好的route对象缓存起来，在dispatch时不用再解析一次
         try {
             $controller = $this->controllerBuilder->build($classPath);
             foreach ($controller->routes as $actionName => $route) {
-                $this->routes[] = [$route->method, $route->uri, [$classPath, $actionName]];
+                $this->routes[] = [$route->method, $route->uri, $classPath, $actionName];
             }
         } catch (\Throwable $e) {
             $exceptionHandler = $this->get(IExceptionHandler::class);
             $exceptionHandler->render($e)->send();
+            exit;
         }
     }
 
@@ -104,12 +119,12 @@ class Application
         // 把解析注解收集的信息，注册成FastRoute路由
         $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) use($app) {
             foreach($app->routes as $route) {
-                list($method, $uri, $callable) = $route;
-                $r->addRoute($method, $uri, $callable);
+                list($method, $uri, $classPath, $actionName) = $route;
+                $r->addRoute($method, $uri, [$classPath, $actionName]);
             }
         });
 
-        $request = $app->get(Request::class);
+        $request = $this->get(Request::class);
         $httpMethod = $request->getMethod();
         $uri = $request->getRequestUri();
         // Strip query string (?foo=bar) and decode URI
@@ -126,10 +141,19 @@ class Application
                     $request->attributes->add($routeInfo[2]);
                 }
                 list($classPath, $actionName) = $routeInfo[1];
-                $controller = $app->controllerBuilder->build($classPath);
+
+                $cache = $app->get(Cache::class);
+                $cacheKey = 'controllerBuilder::build' . md5($classPath);
+                $controller = $cache->fetch($cacheKey);
+                if ($controller === false) {
+                    $controller = $app->controllerBuilder->build($classPath);
+                    $cache->save($cacheKey, $controller, 10);
+                }
+                
                 $routeInstance = $controller->getRoute($actionName);
                 $response = $routeInstance->invoke($app, $request, $classPath, $actionName);
                 $response->send();
+
             } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
                 \PhpRest\abort("{$uri} 访问地址不存在");
             } elseif ($routeInfo[0] == \FastRoute\Dispatcher::METHOD_NOT_ALLOWED) {
@@ -163,7 +187,6 @@ class Application
             $data = $request->toArray(); // method was introduced in Symfony 5.2.
             $request->request = new ParameterBag($data);
         }
-
         return $request;
     }
 }
