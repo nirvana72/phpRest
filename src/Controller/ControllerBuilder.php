@@ -54,18 +54,16 @@ class ControllerBuilder
             $controller->modifyTimespan = filemtime($controller->filePath);
             
             $annotationReader = $this->buildAnnotationReader($classRef);
-            if ($annotationReader !== null) {
-                foreach ($this->annotationnHandlers as $handler) {
-                    list($class, $expression) = $handler;
-                    $annotations = \JmesPath\search($expression, $annotationReader);
-                    if ($annotations !== null) {
-                        if($expression === 'class'){
-                            $annotations = [ $annotations ]; // class不会匹配成数组
-                        }
-                        foreach ($annotations as $annotation){
-                            $annotationHandler = new $class();
-                            $annotationHandler($controller, $annotation);
-                        }
+            foreach ($this->annotationnHandlers as $handler) {
+                list($class, $expression) = $handler;
+                $annotations = \JmesPath\search($expression, $annotationReader);
+                if ($annotations !== null) {
+                    if($expression === 'class'){
+                        $annotations = [ $annotations ]; // class不会匹配成数组
+                    }
+                    foreach ($annotations as $annotation){
+                        $annotationHandler = new $class();
+                        $annotationHandler($controller, $annotation);
                     }
                 }
             }
@@ -76,7 +74,6 @@ class ControllerBuilder
     }
 
     /**
-     * // TODO class可以不写注解， @path // 处理
      * 解析controller文件 class 及 function 上的注解
      * 
      * @param ReflectionClass $classRef controller反射类
@@ -84,12 +81,17 @@ class ControllerBuilder
      */
     private function buildAnnotationReader($classRef) 
     {
-        $docComment = $classRef->getDocComment();
-        // class 没写注解
-        if ($docComment === false) { return null; }
-
         $reader = new AnnotationReader();
-        $reader->class = $this->readAnnotationBlock($docComment);
+        $docComment = $classRef->getDocComment();
+
+        if ($docComment === false) { 
+            // class 没写注解, 默认可以不写注解
+            $reader->class = new AnnotationBlock();
+            $reader->class->summary = $classRef->getName();
+        } else {
+            $reader->class = $this->readAnnotationBlock($docComment);
+        }
+        
         // 遍历controller下的方法
         foreach ($classRef->getMethods() as $method) {
             $docComment = $method->getDocComment();

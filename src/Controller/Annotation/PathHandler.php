@@ -13,5 +13,8 @@ class PathHandler
     {
         // controller 注解上的 path, 可以为空
         $controller->uriPrefix = $ann->description;
+        if ($controller->uriPrefix === '/') {
+            $controller->uriPrefix = '';
+        }
     }
 }
