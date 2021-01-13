@@ -17,12 +17,14 @@ class ParamHandler
         list($type, $name, $doc) = self::resolveParam($ann->description);
 
         $paramMeta = $route->requestHandler->getParamMeta($name);
-        $paramMeta or \PhpRest\abort("{$controller->classPath}::{$target} 注解参数 {$name} 没有被引用");
+        $paramMeta or \PhpRest\abort("{$controller->classPath}::{$target} 注解参数 {$name} 没有被使用");
         $paramMeta->description = $doc;
         
-        if ($type === 'int') $type = 'integer';
-        if(in_array($type, ['integer', 'numeric'])) {
-            // 如果 type 是个基础验证对象
+        // 支持更多的注解验证类型
+        if(in_array($type, ['int', 'integer', 'numeric', 'email', 'url', 'alpha', 'alphaNum', 'slug', 'date', 'time', 'dateTime'])) {
+            if ($type === 'int') $type = 'integer';
+            if ($type === 'time') $type = 'dateFormat=H:i:s';
+            if ($type === 'dateTime') $type = 'dateFormat=Y-m-d H:i:s';
             $paramMeta->validation = $type;
         }
     }

@@ -23,7 +23,7 @@ class Validator extends \Valitron\Validator
         if(is_string($rule)){
             $rules = explode('|', $rule);
             foreach ($rules as $r){
-                $params = explode(':', trim($r));
+                $params = explode('=', trim($r));
                 $rule = $params[0];
                 $params = isset($params[1])?explode(',', $params[1]):[];
                 if($rule == 'in' || $rule == 'notIn'){
