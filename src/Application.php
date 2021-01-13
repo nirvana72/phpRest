@@ -151,6 +151,7 @@ class Application
                 }
                 
                 $routeInstance = $controller->getRoute($actionName);
+                $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
                 $response = $routeInstance->invoke($app, $request, $classPath, $actionName);
                 $response->send();
 

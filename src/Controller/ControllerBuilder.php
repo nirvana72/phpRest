@@ -31,6 +31,7 @@ class ControllerBuilder
     private $annotationnHandlers = [
         [ClassHandler::class, 'class'],
         [PathHandler::class, "class.children[?name=='path']"],
+        [HookHandler::class, "class.children[?name=='hook']"],
         [RouteHandler::class, "methods.*.children[?name=='route'][]"],
         [ParamHandler::class, "methods.*.children[?name=='param'][]"],
         [ReturnHandler::class, "methods.*.children[?name=='return'][]"],
@@ -86,11 +87,12 @@ class ControllerBuilder
 
         if ($docComment === false) { 
             // class 没写注解, 默认可以不写注解
-            $reader->class = new AnnotationBlock();
+            $reader->class = new AnnotationBlock();            
             $reader->class->summary = $classRef->getName();
         } else {
             $reader->class = $this->readAnnotationBlock($docComment);
         }
+        $reader->class->position = 'class';
         
         // 遍历controller下的方法
         foreach ($classRef->getMethods() as $method) {
@@ -102,6 +104,7 @@ class ControllerBuilder
             
             $block = $this->readAnnotationBlock($docComment);
             $block->name = $method->getName();
+            $block->position = 'method';
             $reader->methods[$block->name] = $block;
         }
 

@@ -1,6 +1,8 @@
 <?php
 namespace PhpRest\Controller;
 
+use PhpRest\Meta\HookMeta;
+
 class Controller
 {
     /**
@@ -42,6 +44,11 @@ class Controller
      * @var Route[]
      */
     public $routes = [];
+
+    /**
+     * @var HookMeta[]
+     */
+    public $hooks = [];
     
     /**
      * @param string $classPath controller类的命名空间
