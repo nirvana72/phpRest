@@ -38,19 +38,18 @@ class RequestHandler
     public function makeParams($app, $request) 
     {
         \Valitron\Validator::lang('zh-cn');
-        $req = ['request' => $request];
-        $requestArray = new ArrayAdaptor($req);
+        // $req = ['request' => $request];
+        $requestArray = new ArrayAdaptor($request);
         $inputs = [];
-
         // 从 request 中收集所需参数
         foreach ($this->paramMetas as $meta) {
-            $source = \JmesPath\search("request.{$meta->name}", $requestArray);
+            $source = \JmesPath\search($meta->source, $requestArray);
             if ($source === null) {
                 $meta->isOptional or \PhpRest\abort("缺少参数 '{$meta->name}'");
                 $inputs[$meta->name] = $meta->default;
             } else {
+                $source = ArrayAdaptor::strip($source); // 还原适配器封装
                 $inputs[$meta->name] = $source;
-
                 // 验证参数规则
                 if($meta->validation) {
                     $vld = new Validator([$meta->name => $source]);

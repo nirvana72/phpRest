@@ -42,4 +42,10 @@ class ParamMeta
      * @var string
      */
     public $description;
+
+    /**
+     * 定位request中位置
+     * @var string
+     */
+    public $source;
 }

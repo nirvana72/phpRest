@@ -12,6 +12,12 @@ class BindHandler
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
-        echo "<br><br> BindHandler";
+        $target = $ann->parent->parent->name;
+        $route = $controller->getRoute($target);
+        if(!$route) { return; }
+
+        list($type, $name, $doc) = ParamHandler::resolveParam($ann->parent->description);
+        $paramMeta = $route->requestHandler->getParamMeta($name);
+        $paramMeta->source = $ann->description;
     }
 }

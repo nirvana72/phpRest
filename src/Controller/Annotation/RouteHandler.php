@@ -46,6 +46,7 @@ class RouteHandler
             }
             $meta = new ParamMeta();
             $meta->name        = $paramName;
+            $meta->source      = "request.{$paramName}";
             $meta->type        = $paramClass?:'mixed'; // 参数类型如不是类，这里先mixed, 在ParamAnn中根据注解内容重新定义
             $meta->isOptional  = $param->isOptional();
             $meta->default     = $param->isOptional()?$param->getDefaultValue():null;
