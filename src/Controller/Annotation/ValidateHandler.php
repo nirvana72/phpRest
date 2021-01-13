@@ -2,15 +2,15 @@
 namespace PhpRest\Controller\Annotation;
 
 use PhpRest\Controller\Controller;
-// use PhpRest\Validator\Validator;
+use PhpRest\Annotation\AnnotationTag;
 
 class ValidateHandler
 {
     /**
      * @param Controller $controller
-     * @param AnnotationBlock|AnnotationTag $ann
+     * @param AnnotationTag $ann
      */
-    public function __invoke(Controller $controller, $ann) 
+    public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
         if ($ann->description === '') return;
 

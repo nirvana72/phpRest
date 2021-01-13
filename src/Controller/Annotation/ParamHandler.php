@@ -2,14 +2,15 @@
 namespace PhpRest\Controller\Annotation;
 
 use PhpRest\Controller\Controller;
+use PhpRest\Annotation\AnnotationTag;
 
 class ParamHandler
 {
     /**
      * @param Controller $container
-     * @param AnnotationBlock|AnnotationTag $ann
+     * @param AnnotationTag $ann
      */
-    public function __invoke(Controller $controller, $ann) 
+    public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
         $target = $ann->parent->name;
         $route = $controller->getRoute($target);

@@ -10,13 +10,13 @@ class Controller
     public $uriPrefix;
 
     /**
-     * 类命名空间
+     * 类命名空间(调用时实例化用)
      * @var string
      */
     public $classPath;
 
     /**
-     * 文件物理路径
+     * 文件物理路径(验证缓存过期用)
      * @var string
      */
     public $filePath;
@@ -38,7 +38,7 @@ class Controller
     public $description = '';
 
     /**
-     * 一个controller下的路由集合
+     * controller下的路由集合
      * @var Route[]
      */
     public $routes = [];

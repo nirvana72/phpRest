@@ -67,6 +67,7 @@ class RequestHandler
         foreach($inputs as $_ => $val) {
             $params[] = $val;
         }
+        
         return $params;
     }
 }

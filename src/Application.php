@@ -47,14 +47,14 @@ class Application
             // 默认输出处理器
             IResponseRender::class => \DI\create(ResponseRender::class),
             // 缓存对象
-            Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', $_SERVER['DOCUMENT_ROOT'] . '/../cache/')
-            // Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class)
+            // Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', $_SERVER['DOCUMENT_ROOT'] . '/../cache/')
+            Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class)
         ];
 
         // if( function_exists('apcu_fetch') ) {
         //     $default += [ Cache::class => \DI\create(ApcuCache::class) ];
         // } else {
-        //     $default += [ Cache::class => \DI\create(FilesystemCache::class) ];
+        //     $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
         // }
 
         $builder = new \DI\ContainerBuilder();
@@ -168,14 +168,20 @@ class Application
     }
 
     /**
-     * PHP-DI 获取依赖对象
-     * 
      * @param string $id
      * @return object
      */
     public function get($id) 
     {
         return $this->container->get($id);
+    }
+
+    /**
+     * @return DI\Container
+     */
+    public function getDIContainer() 
+    {
+        return $this->container;
     }
 
     public static function createRequestFromSymfony()

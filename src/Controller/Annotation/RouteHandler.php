@@ -1,6 +1,7 @@
 <?php
 namespace PhpRest\Controller\Annotation;
 
+use PhpRest\Annotation\AnnotationTag;
 use PhpRest\Controller\Controller;
 use PhpRest\Controller\Route;
 use PhpRest\Controller\RequestHandler;
@@ -11,9 +12,9 @@ class RouteHandler
 {
     /**
      * @param Controller $container
-     * @param AnnotationBlock|AnnotationTag $ann
+     * @param AnnotationTag $ann
      */
-    public function __invoke(Controller $controller, $ann) 
+    public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
         $array = explode(' ', $ann->description);
         count($array) === 2 or \PhpRest\abort("{$controller->classPath}->{$ann->parent->summary} @route 注解格式不正确");

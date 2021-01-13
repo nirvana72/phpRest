@@ -2,14 +2,15 @@
 namespace PhpRest\Controller\Annotation;
 
 use PhpRest\Controller\Controller;
+use PhpRest\Annotation\AnnotationTag;
 
 class BindHandler
 {
     /**
      * @param Controller $controller
-     * @param AnnotationBlock|AnnotationTag $ann
+     * @param AnnotationTag $ann
      */
-    public function __invoke(Controller $controller, $ann) 
+    public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
         echo "<br><br> BindHandler";
     }
