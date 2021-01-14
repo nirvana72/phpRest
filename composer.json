@@ -20,8 +20,7 @@
     },
     "autoload": {
         "psr-4": {
-            "PhpRest\\": "src/",
-            "App\\": "App/"
+            "PhpRest\\": "src/"
         },
         "files": [
             "src/functions.php"
