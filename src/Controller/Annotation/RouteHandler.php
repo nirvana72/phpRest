@@ -16,7 +16,7 @@ class RouteHandler
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
-        $array = explode(' ', $ann->description);
+        $array = explode(' ', trim(preg_replace ( "/\s(?=\s)/","\\1", $ann->description)));
         count($array) === 2 or \PhpRest\abort("{$controller->classPath}->{$ann->parent->summary} @route 注解格式不正确");
 
         $methodType = strtoupper($array[0]);

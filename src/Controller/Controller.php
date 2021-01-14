@@ -56,9 +56,11 @@ class Controller
     public function __construct($classPath) 
     {
         $this->classPath = $classPath;
-        // controller 路由默认为controller 名小写
+        // 默认路由 OrderTypeController = /order_type
         $shortName = end(explode('\\', $classPath));
-        $this->path = '/' . strtolower($shortName);
+        $shortName = substr($shortName,0 , -10);
+        $shortName = \PhpRest\uncamelize($shortName);
+        $this->path = '/' . $shortName;
     }
 
     /**

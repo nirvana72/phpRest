@@ -18,7 +18,7 @@ class HookHandler
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
-        $array = explode(' ', $ann->description);
+        $array = explode(' ', trim(preg_replace ( "/\s(?=\s)/","\\1", $ann->description)));
         $hook = new HookMeta();
         $hook->classPath = $array[0];
         $hook->params    = $array[1];
