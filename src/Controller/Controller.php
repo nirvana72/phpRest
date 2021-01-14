@@ -56,6 +56,9 @@ class Controller
     public function __construct($classPath) 
     {
         $this->classPath = $classPath;
+        // controller 路由默认为controller 名小写
+        $shortName = end(explode('\\', $classPath));
+        $this->path = '/' . strtolower($shortName);
     }
 
     /**
