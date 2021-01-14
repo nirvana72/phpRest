@@ -78,6 +78,15 @@ class Application
      */
     public function loadRoutesFromPath($controllerPath, $namespace) 
     {
+        // $builder = new \PhpRest\Entity\EntityBuilder();
+        // $entity = $builder->build('App\Entity\User');
+        // $obj = $entity->makeWithData(['id' => 11, 'name' => 'nijia', 'order' => '3242342']);
+        // \PhpRest\dump($obj);
+
+        $controller = $this->controllerBuilder->build('App\Controller\Example\ParamsController');
+        \PhpRest\dump($controller);
+        exit;
+
         $d = dir($controllerPath);
         while (($entry = $d->read()) !== false){
             if ($entry == '.' || $entry == '..') { continue; }
