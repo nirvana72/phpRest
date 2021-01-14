@@ -2,6 +2,7 @@
 namespace PhpRest\Entity;
 
 use PhpRest\Meta\PropertyMeta;
+use PhpRest\Validator\Validator;
 
 class Entity
 {
@@ -57,5 +58,33 @@ class Entity
             return $this->properties[$name];
         }
         return false;
+    }
+
+    /**
+     * 创建实体
+     * 
+     * @param $data 数据
+     * @return object
+     */
+    public function makeInstanceWithData($data) {
+        \Valitron\Validator::lang('zh-cn');
+        $obj = new $this->classPath();
+        foreach ($this->properties as $meta) {
+            $val = $data[$meta->name];
+            if (isset($val)) {
+                if($meta->validation){
+                    $vld = new Validator([$meta->name => $val]);
+                    $vld->rule($meta->validation, $meta->name);
+                    if (false === $vld->validate()) {
+                        $error = $vld->errors();
+                        \PhpRest\abort($error[$meta->name][0]);
+                    }
+                }
+                $obj->{$meta->name} = $val;
+            } else {
+                $meta->isOptional or \PhpRest\abort("实体类 {$this->classPath} 缺少属性 '{$meta->name}'");
+            }
+        }
+        return $obj;
     }
 }

@@ -68,9 +68,11 @@ class EntityBuilder
         
         // 遍历属性
         foreach ($classRef->getProperties() as $property) {
+          
             // 过滤
-            if ($property->isStatic() === true || 
-                $property->isPublic() === false) { continue; }
+            if ($property->isDefault() === false ||
+                $property->isStatic()  === true || 
+                $property->isPublic()  === false) { continue; }
             
             $docComment = $property->getDocComment();
             $block = $this->readAnnotationBlock($docComment);

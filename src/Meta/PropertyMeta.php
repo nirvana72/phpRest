@@ -44,10 +44,16 @@ class PropertyMeta
     public $validation;
 
     /**
-     * 是否可选
+     * 是否可选(默认可选)
      * @var boolean
      */
-    public $isOptional;
+    public $isOptional = true;
+
+    /**
+     * 是否自动增长键
+     * @var boolean
+     */
+    public $autoIncrement = false;
 
     public function __construct($name) 
     {

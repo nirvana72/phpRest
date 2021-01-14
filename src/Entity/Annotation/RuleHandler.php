@@ -16,8 +16,8 @@ class RuleHandler
         $property = $entity->getProperty($target);
         if ($property === false) { return; }
 
-        if (strpos($ann->description, 'optional') !== false) {
-            $property->isOptional = true;
+        if (strpos($ann->description, 'required') !== false) {
+            $property->isOptional = false;
         }
 
         $property->validation .= '|' . $ann->description;

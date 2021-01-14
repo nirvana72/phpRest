@@ -5,6 +5,7 @@ use Symfony\Component\HttpFoundation\Request;
 use PhpRest\Meta\ParamMeta;
 use PhpRest\Utils\ArrayAdaptor;
 use PhpRest\Validator\Validator;
+use PhpRest\Entity\EntityBuilder;
 
 class RequestHandler
 {
@@ -49,22 +50,24 @@ class RequestHandler
                 $inputs[$meta->name] = $meta->default;
             } else {
                 $source = ArrayAdaptor::strip($source); // 还原适配器封装
+                
                 if ($meta->type[0] === 'entity') {
+                    // 实体参数
                     $entityClassPath = $meta->type[1];
-                    
-                    // TODO 参数指定为一个绑定实体类， 这里要封装成一个实体类
+                    $entityBuilder = new EntityBuilder();
+                    $entity = $entityBuilder->build($entityClassPath);
+                    $inputs[$meta->name] = $entity->makeInstanceWithData($source);
                 } else {
-                    $inputs[$meta->name] = $source;
-                }
-
-                // 验证参数规则
-                if($meta->validation) {
-                    $vld = new Validator([$meta->name => $source]);
-                    $vld->rule($meta->validation, $meta->name);
-                    if (false === $vld->validate()) {
-                        $error = $vld->errors();
-                        \PhpRest\abort($error[$meta->name][0]);
+                    // 基础类型，验证规则
+                    if($meta->validation) {
+                        $vld = new Validator([$meta->name => $source]);
+                        $vld->rule($meta->validation, $meta->name);
+                        if (false === $vld->validate()) {
+                            $error = $vld->errors();
+                            \PhpRest\abort($error[$meta->name][0]);
+                        }
                     }
+                    $inputs[$meta->name] = $source;
                 }
             }
         }

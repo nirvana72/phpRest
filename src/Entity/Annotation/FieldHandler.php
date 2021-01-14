@@ -16,6 +16,10 @@ class FieldHandler
         $property = $entity->getProperty($target);
         if ($property === false) { return; }
 
-        $property->field = $ann->description;
+        $array = explode('@', $ann->description);
+        $property->field = $array[0];
+        if ($array[1] === 'auto') {
+            $property->autoIncrement = true;
+        }
     }
 }
