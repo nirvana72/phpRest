@@ -85,7 +85,7 @@ class Application
                     $this->loadRoutesFromClass($classPath);
                 }
             } else {
-                $this->loadRoutesFromPath($path, $namespace . '\\' . $entry, $routes);
+                $this->loadRoutesFromPath($path, $namespace . '\\' . $entry);
             }
         }
         $d->close();
@@ -147,7 +147,7 @@ class Application
                 $controller = $cache->fetch($cacheKey);
                 if ($controller === false) {
                     $controller = $app->controllerBuilder->build($classPath);
-                    $cache->save($cacheKey, $controller, 10);
+                    $cache->save($cacheKey, $controller);
                 }
                 
                 $routeInstance = $controller->getRoute($actionName);

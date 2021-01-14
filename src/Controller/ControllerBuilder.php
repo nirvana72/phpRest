@@ -29,15 +29,15 @@ class ControllerBuilder
     private $cache;
 
     private $annotationnHandlers = [
-        [ClassHandler::class, 'class'],
-        [PathHandler::class, "class.children[?name=='path']"],
-        [HookHandler::class, "class.children[?name=='hook']"],
-        [RouteHandler::class, "methods.*.children[?name=='route'][]"],
-        [ParamHandler::class, "methods.*.children[?name=='param'][]"],
-        [ReturnHandler::class, "methods.*.children[?name=='return'][]"],
-        [BindHandler::class, "methods.*.children[].children[?name=='bind'][]"],
-        [ValidateHandler::class, "methods.*.children[].children[?name=='v'][]"],
-        [HookHandler::class, "methods.*.children[?name=='hook'][]"],
+        [ClassHandler::class,     'class'],
+        [PathHandler::class,      "class.children[?name=='path']"],
+        [HookHandler::class,      "class.children[?name=='hook']"],
+        [RouteHandler::class,     "methods.*.children[?name=='route'][]"],
+        [HookHandler::class,      "methods.*.children[?name=='hook'][]"],
+        [ParamHandler::class,     "methods.*.children[?name=='param'][]"],
+        [BindHandler::class,      "methods.*.children[].children[?name=='bind'][]"],
+        [ValidateHandler::class,  "methods.*.children[].children[?name=='v'][]"],
+        [ReturnHandler::class,    "methods.*.children[?name=='return'][]"]
     ];
 
     public function build($classPath) 
