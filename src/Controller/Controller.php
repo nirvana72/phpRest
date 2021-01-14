@@ -6,10 +6,20 @@ use PhpRest\Meta\HookMeta;
 class Controller
 {
     /**
+     * @var string
+     */
+    public $summary = '';
+
+    /**
+     * @var string
+     */
+    public $description = '';
+
+    /**
      * path /xxx
      * @var string
      */
-    public $uriPrefix;
+    public $path = '';
 
     /**
      * 类命名空间(调用时实例化用)
@@ -28,17 +38,7 @@ class Controller
      * @var string
      */
     public $modifyTimespan;
-
-    /**
-     * @var string
-     */
-    public $summary = '';
-
-    /**
-     * @var string
-     */
-    public $description = '';
-
+    
     /**
      * controller下的路由集合
      * @var Route[]

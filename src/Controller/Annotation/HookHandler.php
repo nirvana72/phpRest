@@ -32,7 +32,7 @@ class HookHandler
         if ($ann->parent->position === 'method') {
             $target = $ann->parent->name;
             $route = $controller->getRoute($target);
-            if(!$route) { return; }
+            if ($route === false) { return; }
             $route->hooks[$hook->classPath] = $hook;
         }
     }

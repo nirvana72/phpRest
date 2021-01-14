@@ -13,9 +13,9 @@ class PathHandler
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
         // controller 注解上的 path, 可以为空
-        $controller->uriPrefix = $ann->description;
-        if ($controller->uriPrefix === '/') {
-            $controller->uriPrefix = '';
+        $controller->path = $ann->description;
+        if ($controller->path === '/') {
+            $controller->path = '';
         }
     }
 }

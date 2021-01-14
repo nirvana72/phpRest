@@ -14,7 +14,7 @@ class ParamHandler
     {
         $target = $ann->parent->name;
         $route = $controller->getRoute($target);
-        if(!$route) { return; }
+        if ($route === false) { return; }
         list($type, $name, $doc) = self::resolveParam($ann->description);
 
         $paramMeta = $route->requestHandler->getParamMeta($name);
@@ -22,42 +22,10 @@ class ParamHandler
         $paramMeta->description = $doc;
         
         if ($paramMeta->type[0] !== 'entity') { // 已在@route解析时确定了实体类型
-            if(in_array($type, ['email', 'url'])) {
-                $paramMeta->validation = $type;
-                $paramMeta->type = ['string', $type];
-            } 
-            elseif(in_array($type, ['int', 'integer'])) {
-                $paramMeta->validation = 'integer';
-                $paramMeta->type = ['integer', 1];
-            } 
-            elseif($type === 'numeric') {
-                $paramMeta->validation = 'numeric';
-                $paramMeta->type = ['number', 1.1];
-            }
-            elseif($type === 'alpha') {
-                $paramMeta->validation = 'alpha';
-                $paramMeta->type = ['string', '只能包括英文字母(a-z)'];
-            }
-            elseif($type === 'alphaNum') {
-                $paramMeta->validation = 'alphaNum';
-                $paramMeta->type = ['string', '只能包括英文字母(a-z)和数字(0-9)'];
-            }
-            elseif($type === 'slug') {
-                $paramMeta->validation = 'slug';
-                $paramMeta->type = ['string', '只能包括英文字母(a-z)、数字(0-9)、破折号和下划线'];
-            }
-            elseif($type === 'date') {
-                $paramMeta->validation = 'date';
-                $paramMeta->type = ['string', 'yyyy-mm-dd'];
-            }
-            elseif($type === 'time') {
-                $paramMeta->validation = 'dateFormat=H:i:s';
-                $paramMeta->type = ['string', 'HH:mm:ss'];
-            }
-            elseif($type === 'dateTime') {
-                $paramMeta->validation = 'dateFormat=Y-m-d H:i:s';
-                $paramMeta->type = ['string', 'yyyy-mm-dd HH:mm:ss'];
-            }
+            $cast = \PhpRest\Validator\Validator::typeCast($type);
+            list($realType, $validation, $desc) = $cast;
+            $paramMeta->validation = $validation;
+            $paramMeta->type = [$realType, $desc];
         }
     }
 

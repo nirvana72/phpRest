@@ -11,7 +11,7 @@ use PhpRest\Controller\Annotation\RouteHandler;
 use PhpRest\Controller\Annotation\ParamHandler;
 use PhpRest\Controller\Annotation\ReturnHandler;
 use PhpRest\Controller\Annotation\BindHandler;
-use PhpRest\Controller\Annotation\ValidateHandler;
+use PhpRest\Controller\Annotation\RuleHandler;
 use PhpRest\Controller\Annotation\HookHandler;
 use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
 use phpDocumentor\Reflection\DocBlock\StandardTagFactory;
@@ -36,7 +36,7 @@ class ControllerBuilder
         [HookHandler::class,      "methods.*.children[?name=='hook'][]"],
         [ParamHandler::class,     "methods.*.children[?name=='param'][]"],
         [BindHandler::class,      "methods.*.children[].children[?name=='bind'][]"],
-        [ValidateHandler::class,  "methods.*.children[].children[?name=='v'][]"],
+        [RuleHandler::class,      "methods.*.children[].children[?name=='rule'][]"],
         [ReturnHandler::class,    "methods.*.children[?name=='return'][]"]
     ];
 
@@ -88,7 +88,7 @@ class ControllerBuilder
         if ($docComment === false) { 
             // class 没写注解, 默认可以不写注解
             $reader->class = new AnnotationBlock();            
-            $reader->class->summary = $classRef->getName();
+            $reader->class->summary = $classRef->getShortName();
         } else {
             $reader->class = $this->readAnnotationBlock($docComment);
         }

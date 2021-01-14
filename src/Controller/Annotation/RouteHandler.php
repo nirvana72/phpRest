@@ -31,7 +31,7 @@ class RouteHandler
         // 实例化一个路由对象
         $route = new Route();
         $route->method      = $methodType;
-        $route->uri         = $controller->uriPrefix . $methodUri;
+        $route->uri         = $controller->path . $methodUri;
         $route->summary     = $ann->parent->summary;
         $route->description = $ann->parent->description;
         $route->requestHandler  = new RequestHandler();
