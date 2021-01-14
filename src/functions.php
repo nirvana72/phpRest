@@ -44,3 +44,14 @@ if (! function_exists ( 'PhpRest\dump' )) {
         echo $output;
     }
 }
+
+if (! function_exists ( 'PhpRest\uncamelize' )) {
+    /**
+     * 驼峰转下划线
+     * @return void
+     */
+    function uncamelize($camelCaps, $separator = '_')
+    {
+        return strtolower(preg_replace('/([a-z])([A-Z])/', "$1" . $separator . "$2", $camelCaps));
+    }
+}

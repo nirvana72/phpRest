@@ -78,6 +78,10 @@ class Application
      */
     public function loadRoutesFromPath($controllerPath, $namespace) 
     {
+        $controller = $this->controllerBuilder->build('App\Controller\IndexController');
+        \PhpRest\dump($controller);
+        exit;
+
         $d = dir($controllerPath);
         while (($entry = $d->read()) !== false){
             if ($entry == '.' || $entry == '..') { continue; }

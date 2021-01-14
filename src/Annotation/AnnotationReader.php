@@ -14,4 +14,10 @@ class AnnotationReader extends AnnotationBase
      * @var AnnotationBlock[]
      */
     public $methods = [];
+
+    /**
+     * 属性上的注解对象
+     * @var AnnotationBlock[]
+     */
+    public $properties = [];
 }
