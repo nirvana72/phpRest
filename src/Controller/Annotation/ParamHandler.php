@@ -21,12 +21,43 @@ class ParamHandler
         $paramMeta or \PhpRest\abort("{$controller->classPath}::{$target} 注解参数 {$name} 没有被使用");
         $paramMeta->description = $doc;
         
-        // 支持更多的注解验证类型
-        if(in_array($type, ['int', 'integer', 'numeric', 'email', 'url', 'alpha', 'alphaNum', 'slug', 'date', 'time', 'dateTime'])) {
-            if ($type === 'int') $type = 'integer';
-            if ($type === 'time') $type = 'dateFormat=H:i:s';
-            if ($type === 'dateTime') $type = 'dateFormat=Y-m-d H:i:s';
-            $paramMeta->validation = $type;
+        if ($paramMeta->type[0] !== 'entity') { // 已在@route解析时确定了实体类型
+            if(in_array($type, ['email', 'url'])) {
+                $paramMeta->validation = $type;
+                $paramMeta->type = ['string', $type];
+            } 
+            elseif(in_array($type, ['int', 'integer'])) {
+                $paramMeta->validation = 'integer';
+                $paramMeta->type = ['integer', 1];
+            } 
+            elseif($type === 'numeric') {
+                $paramMeta->validation = 'numeric';
+                $paramMeta->type = ['number', 1.1];
+            }
+            elseif($type === 'alpha') {
+                $paramMeta->validation = 'alpha';
+                $paramMeta->type = ['string', '只能包括英文字母(a-z)'];
+            }
+            elseif($type === 'alphaNum') {
+                $paramMeta->validation = 'alphaNum';
+                $paramMeta->type = ['string', '只能包括英文字母(a-z)和数字(0-9)'];
+            }
+            elseif($type === 'slug') {
+                $paramMeta->validation = 'slug';
+                $paramMeta->type = ['string', '只能包括英文字母(a-z)、数字(0-9)、破折号和下划线'];
+            }
+            elseif($type === 'date') {
+                $paramMeta->validation = 'date';
+                $paramMeta->type = ['string', 'yyyy-mm-dd'];
+            }
+            elseif($type === 'time') {
+                $paramMeta->validation = 'dateFormat=H:i:s';
+                $paramMeta->type = ['string', 'HH:mm:ss'];
+            }
+            elseif($type === 'dateTime') {
+                $paramMeta->validation = 'dateFormat=Y-m-d H:i:s';
+                $paramMeta->type = ['string', 'yyyy-mm-dd HH:mm:ss'];
+            }
         }
     }
 

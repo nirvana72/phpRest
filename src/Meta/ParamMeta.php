@@ -14,10 +14,10 @@ class ParamMeta
     public $name;
 
     /**
-     * 参数类型
-     * @var string
+     * 参数类型[类型，默认值描述]
+     * @var string[]
      */
-    public $type;
+    public $type = ['string', ''];
 
     /**
      * 默认值
@@ -32,7 +32,7 @@ class ParamMeta
     public $isOptional;
 
     /**
-     * 验证描述
+     * 验证规则
      * @var string
      */
     public $validation;

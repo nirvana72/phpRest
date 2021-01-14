@@ -36,21 +36,23 @@ class RouteHandler
         $route->description = $ann->parent->description;
         $route->requestHandler  = new RequestHandler();
         
-        // 遍历方法的参数，封装成 ParamMeta 对像
+        // 遍历方法的参数，封装成 ParamMeta 对象, 收集到route->requestHandler里
         $methodParams = $method->getParameters();
         foreach ($methodParams as $param) {
-            $paramName = $param->getName();
-            $paramClass = $param->getClass();
-            if($paramClass){ // 如果参数是个Class,否则(基础数据类型)这里是null
-                $paramClass = $paramClass->getName();
-            }
+            $paramName = $param->getName(); // 参数名 不带$
+
             $meta = new ParamMeta();
             $meta->name        = $paramName;
             $meta->source      = "request.{$paramName}";
-            $meta->type        = $paramClass?:'mixed'; // 参数类型如不是类，这里先mixed, 在ParamAnn中根据注解内容重新定义
             $meta->isOptional  = $param->isOptional();
             $meta->default     = $param->isOptional()?$param->getDefaultValue():null;
-            $meta->description = $paramName; // 默认参数描述为参数名，也就是说@param可以不写
+            $meta->description = $paramName; // 默认参数描述为参数名，也就是说@param可以不写, 如果写了则在@param解析时覆盖
+
+            // 参数是不是绑定一个实体类
+            $paramClass = $param->getClass(); // 参数类型（对象），不写或写基础数据类型为NULL
+            if($paramClass){ // 如果参数是个Class,否则(基础数据类型)这里是null
+                $meta->type = ['entity', $paramClass->getName()];
+            }
 
             $route->requestHandler->paramMetas[] = $meta;
         }

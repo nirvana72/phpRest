@@ -45,17 +45,18 @@ class Application
             // 默认错误处理器
             IExceptionHandler::class => \DI\create(ExceptionHandler::class),
             // 默认输出处理器
-            IResponseRender::class => \DI\create(ResponseRender::class),
-            // 缓存对象
-            // Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', $_SERVER['DOCUMENT_ROOT'] . '/../cache/')
-            Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class)
+            IResponseRender::class => \DI\create(ResponseRender::class)
         ];
 
+        // 缓存对象
         // if( function_exists('apcu_fetch') ) {
         //     $default += [ Cache::class => \DI\create(ApcuCache::class) ];
         // } else {
         //     $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
         // }
+        
+         // $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', $_SERVER['DOCUMENT_ROOT'] . '/../cache/') ];
+        $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
 
         $builder = new \DI\ContainerBuilder();
         $builder->addDefinitions($default);
@@ -69,6 +70,8 @@ class Application
 
     /**
      * 遍历加载物理文件controller
+     * 
+     * 只会加载 'Controller.php' 结尾的PHP文件
      * 
      * @param string $controllerPath controller所在目录
      * @param string $namespace controller所在命名空间

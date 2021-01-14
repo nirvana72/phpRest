@@ -49,7 +49,13 @@ class RequestHandler
                 $inputs[$meta->name] = $meta->default;
             } else {
                 $source = ArrayAdaptor::strip($source); // 还原适配器封装
-                $inputs[$meta->name] = $source;
+                
+                if ($meta->type[0] === 'entity') {
+
+                } else {
+                    $inputs[$meta->name] = $source;
+                }
+
                 // 验证参数规则
                 if($meta->validation) {
                     $vld = new Validator([$meta->name => $source]);
