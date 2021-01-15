@@ -29,6 +29,18 @@ class Entity
     public $classPath;
 
     /**
+     * 文件物理路径(验证缓存过期用)
+     * @var string
+     */
+    public $filePath;
+
+    /**
+     * 上次修改时间(验证缓存过期用)
+     * @var string
+     */
+    public $modifyTimespan;
+
+    /**
      * 属性集合
      * @var PropertyMeta[]
      */
@@ -63,10 +75,11 @@ class Entity
     /**
      * 创建实体
      * 
+     * @param $app Application
      * @param $data 数据
      * @return object
      */
-    public function makeInstanceWithData($data) {
+    public function makeInstanceWithData($app, $data) {
         \Valitron\Validator::lang('zh-cn');
         $obj = new $this->classPath();
         foreach ($this->properties as $meta) {
@@ -74,9 +87,9 @@ class Entity
             if (isset($val)) {
                 if ($meta->type[0] === 'entity') {
                     // 嵌套实体类
-                    $entityBuilder = new EntityBuilder();
+                    $entityBuilder = $app->get(EntityBuilder::class);
                     $subEntity = $entityBuilder->build($meta->type[1]);
-                    $val = $subEntity->makeInstanceWithData($val);
+                    $val = $subEntity->makeInstanceWithData($app, $val);
                 } elseif($meta->validation){
                     $vld = new Validator([$meta->name => $val]);
                     $vld->rule($meta->validation, $meta->name);

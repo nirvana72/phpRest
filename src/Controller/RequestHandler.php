@@ -72,9 +72,9 @@ class RequestHandler
                 if ($meta->type[0] === 'entity') {
                     // 实体参数
                     $entityClassPath = $meta->type[1];
-                    $entityBuilder = new EntityBuilder();
+                    $entityBuilder = $app->get(EntityBuilder::class);
                     $entity = $entityBuilder->build($entityClassPath);
-                    $inputs[$meta->name] = $entity->makeInstanceWithData($source);
+                    $inputs[$meta->name] = $entity->makeInstanceWithData($app, $source);
                 } else {
                     // 基础类型，验证规则
                     if($meta->validation) {

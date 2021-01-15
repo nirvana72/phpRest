@@ -3,8 +3,8 @@ namespace PhpRest\Test;
 
 class EntityBuildTest
 {
-    public function test1() {
-        $builder = new \PhpRest\Entity\EntityBuilder();
+    public function test1($app) {
+        $builder = $app->get(\PhpRest\Entity\EntityBuilder::class);
         $entity = $builder->build('Example\Entity\Company');
         $data = [
           'id' => 11,
@@ -23,7 +23,7 @@ class EntityBuildTest
             ]
           ]
         ];
-        $obj = $entity->makeInstanceWithData($data);
+        $obj = $entity->makeInstanceWithData($app, $data);
         \PhpRest\dump($obj);
     }
 }

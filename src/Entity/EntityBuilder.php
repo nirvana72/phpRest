@@ -14,6 +14,12 @@ use phpDocumentor\Reflection\DocBlock\Tags\Var_ as VarTag;
 
 class EntityBuilder
 {
+    /**
+     * @Inject
+     * @var \Doctrine\Common\Cache\Cache
+     */
+    private $cache;
+
     private $annotationnHandlers = [
         [ClassHandler::class,     'class'],
         [TableHandler::class,     "class.children[?name=='table']"],
@@ -25,23 +31,35 @@ class EntityBuilder
 
     public function build($classPath) 
     {
-        // TODO 缓存
-        $entity = new Entity($classPath);
-        $classRef = new \ReflectionClass($classPath) or \PhpRest\abort("load class $classPath failed");
-        $annotationReader = $this->buildAnnotationReader($classRef);
-        foreach ($this->annotationnHandlers as $handler) {
-            list($class, $expression) = $handler;
-            $annotations = \JmesPath\search($expression, $annotationReader);
-            if ($annotations !== null) {
-                if($expression === 'class') {
-                    $annotations = [ $annotations ]; // class不会匹配成数组
-                }
-                foreach ($annotations as $annotation) {
-                    $annotationHandler = new $class();
-                    $annotationHandler($entity, $annotation);
+        $cacheKey = 'entityBuilder::build' . md5($classPath);
+        $entity = $this->cache->fetch($cacheKey);
+
+        if ($entity === false || 
+            $entity->modifyTimespan !== filemtime($entity->filePath)) {
+
+            // echo "测试输出 entityBuilder::build {$classPath}<br>\r\n";
+            $entity = new Entity($classPath);
+            $classRef = new \ReflectionClass($classPath) or \PhpRest\abort("load class $classPath failed");
+            $entity->filePath = $classRef->getFileName();
+            $entity->modifyTimespan = filemtime($entity->filePath);
+
+            $annotationReader = $this->buildAnnotationReader($classRef);
+            foreach ($this->annotationnHandlers as $handler) {
+                list($class, $expression) = $handler;
+                $annotations = \JmesPath\search($expression, $annotationReader);
+                if ($annotations !== null) {
+                    if($expression === 'class') {
+                        $annotations = [ $annotations ]; // class不会匹配成数组
+                    }
+                    foreach ($annotations as $annotation) {
+                        $annotationHandler = new $class();
+                        $annotationHandler($entity, $annotation);
+                    }
                 }
             }
+            $this->cache->save($cacheKey, $entity);
         }
+
         return $entity;
     }
 
@@ -102,7 +120,7 @@ class EntityBuilder
                 $annTag->name        = $tag->getName();
                 if ($tag instanceof VarTag) {
                     $type = (string)$tag->getType();
-                    if ($type[0] === '\\') $type = substr($type, 1);
+                    $type = ltrim($type, '\\');
                     $annTag->description = $type;
                 } else {
                     $annTag->description = $tag->getDescription()->render();

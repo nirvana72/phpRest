@@ -127,10 +127,10 @@ class ControllerBuilder
             $annTag->parent = $annBlock;
             $annTag->name   = $tag->getName();
             if ($tag instanceof ParamTag) {
-                $type     = (string)$tag->getType();
                 $varName  = $tag->getVariableName();
                 $desc     = $tag->getDescription()->render();
-                if ($type[0] === '\\') $type = substr($type, 1); // phpDocumentor 不可识别的类型会认为是类，在前面加 \
+                $type     = (string)$tag->getType();
+                $type     = ltrim($type, '\\'); // phpDocumentor 不可识别的类型会认为是类，在前面加 \
                 if ($desc === '') $desc = $varName;
 
                 $annTag->description = [ $type, $varName, $desc ];
