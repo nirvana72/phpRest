@@ -27,6 +27,9 @@ class Application
 
     /** 
      * 所有路由信息(非 Route 对象)
+     * 
+     * ?? 是否要缓存，缓存了的话修改代码就不会识别了，但是生产环境中通常又不会修改文件
+     * 
      * @var array 
      * */
     private $routes = [];
@@ -48,7 +51,7 @@ class Application
             IResponseRender::class => \DI\create(ResponseRender::class)
         ];
 
-        // 缓存对象
+        // // 缓存对象
         // if( function_exists('apcu_fetch') ) {
         //     $default += [ Cache::class => \DI\create(ApcuCache::class) ];
         // } else {
@@ -118,6 +121,17 @@ class Application
      */
     public function dispatch() 
     {
+        $request = $this->get(Request::class);
+        $httpMethod = $request->getMethod();
+        $uri = $request->getRequestUri();
+        if ($uri === '/favicon.ico') { exit; }
+
+        // Strip query string (?foo=bar) and decode URI
+        if (false !== $pos = strpos($uri, '?')) {
+            $uri = substr($uri, 0, $pos);
+        }
+        $uri = rawurldecode($uri);
+
         $app = $this;
         // 把解析注解收集的信息，注册成FastRoute路由
         $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) use($app) {
@@ -126,16 +140,7 @@ class Application
                 $r->addRoute($method, $uri, [$classPath, $actionName]);
             }
         });
-
-        $request = $this->get(Request::class);
-        $httpMethod = $request->getMethod();
-        $uri = $request->getRequestUri();
-        // Strip query string (?foo=bar) and decode URI
-        if (false !== $pos = strpos($uri, '?')) {
-            $uri = substr($uri, 0, $pos);
-        }
-        $uri = rawurldecode($uri);
-
+        
         // FastRoute匹配当前路由
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
         try {
@@ -195,7 +200,7 @@ class Application
         $httpMethod  = $request->getMethod();
         if (0 === strpos($contentType, 'application/json') && in_array($httpMethod, ['POST', 'PUT'])) {
             $content = $request->getContent();
-            $data = json_decode($request->getContent(), true);
+            $data = json_decode($request->getContent(), true)?:[];
             $request->request = new ParameterBag($data);
         }
         return $request;
