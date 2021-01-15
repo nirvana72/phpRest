@@ -3,8 +3,6 @@ namespace PhpRest\Controller\Annotation;
 
 use PhpRest\Controller\Controller;
 use PhpRest\Annotation\AnnotationTag;
-use phpDocumentor\Reflection\TypeResolver;
-use phpDocumentor\Reflection\Types\ContextFactory;
 
 class ParamHandler
 {
@@ -37,12 +35,7 @@ class ParamHandler
             if (strpos($type, '\\') !== false || preg_match("/^[A-Z]{1}$/", $type[0])) {
                 if (strpos($type, '\\') === false) {
                     // 如果没写全命名空间，需要通过反射取得全命名空间
-                    $resolver = new TypeResolver();
-                    $contextFactory = new ContextFactory();
-                    $classRef = new \ReflectionClass($controller->classPath);
-                    $context = $contextFactory->createFromReflector($classRef);
-                    $typeRef = $resolver->resolve($type, $context);
-                    $type = (string)$typeRef;
+                    $type = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($controller->classPath, $type);
                 }
                 class_exists($type) or \PhpRest\abort("{$controller->classPath}::{$target} @param {$name} 指定的实体类 {$type} 不存在");
                 $paramMeta->type = ['entity', $type];
