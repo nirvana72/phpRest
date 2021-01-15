@@ -38,7 +38,7 @@ class ControllerBuilder
 
     public function build($classPath) 
     {
-        $cacheKey = 'controllerBuilder::build' . md5($classPath);
+        $cacheKey = 'ControllerBuilder::build' . md5($classPath);
         $controller = $this->cache->fetch($cacheKey);
 
         if ($controller === false || 

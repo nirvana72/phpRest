@@ -80,26 +80,22 @@ class Entity
      * @return object
      */
     public function makeInstanceWithData($app, $data) {
-        \Valitron\Validator::lang('zh-cn');
-        $obj = new $this->classPath();
+        $obj = $app->make($this->classPath);
         foreach ($this->properties as $property) {
             $val = $data[$property->name];
             if (isset($val)) {
-              // TODO 实体类数组属性支持
-                if ($property->type[0] === 'entity') {
+                // TODO 实体类数组属性支持
+                if ($property->type[0] === 'Entity') {
                     // 嵌套实体类
                     $entityBuilder = $app->get(EntityBuilder::class);
                     $subEntity = $entityBuilder->build($property->type[1]);
                     $val = $subEntity->makeInstanceWithData($app, $val);
                 } elseif($property->validation){
-                    $vld = new Validator([$property->name => $val]);
+                    $vld = new Validator([$property->name => $val], [], 'zh-cn');
                     $vld->rule($property->validation, $property->name);
-                    if (false === $vld->validate()) {
-                        $error = $vld->errors();
-                        \PhpRest\abort($error[$property->name][0]);
-                    }
+                    $vld->validate() or \PhpBoot\abort(current($vld->errors()));
                 }
-                
+                // TODO 实体类基础类型数组 验证
                 $obj->{$property->name} = $val;
             } else {
                 $property->isOptional or \PhpRest\abort("实体类 {$this->classPath} 缺少属性 '{$property->name}'");

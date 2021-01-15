@@ -31,7 +31,7 @@ class EntityBuilder
 
     public function build($classPath) 
     {
-        $cacheKey = 'entityBuilder::build' . md5($classPath);
+        $cacheKey = 'EntityBuilder::build' . md5($classPath);
         $entity = $this->cache->fetch($cacheKey);
 
         if ($entity === false || 

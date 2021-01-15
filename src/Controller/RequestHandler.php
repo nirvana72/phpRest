@@ -50,8 +50,7 @@ class RequestHandler
      */
     public function makeParams($app, $request) 
     {
-        \Valitron\Validator::lang('zh-cn');
-        // $req = ['request' => $request];
+        $vld = new Validator([], [], 'zh-cn');
         $requestArray = new ArrayAdaptor($request);
         $inputs = [];
         // 从 request 中收集所需参数
@@ -63,40 +62,39 @@ class RequestHandler
             }
             $source = \JmesPath\search($meta->source, $requestArray);
             if ($source === null) {
-                $meta->isOptional or \PhpRest\abort("缺少参数 '{$meta->name}'");
+                $meta->isOptional or \PhpRest\abort("请求参数缺少 '{$meta->name}'");
                 $inputs[$meta->name] = $meta->default;
             } else {
                 $source = ArrayAdaptor::strip($source); // 还原适配器封装
                 
-                if ($meta->type[0] === 'entity') {
+                if ($meta->type[0] === 'Entity' || $meta->type[0] === 'Entity[]') {
                     $entityClassPath = $meta->type[1];
                     $entityBuilder = $app->get(EntityBuilder::class);
                     $entity = $entityBuilder->build($entityClassPath);
-                    $inputs[$meta->name] = $entity->makeInstanceWithData($app, $source);
-                }
-                elseif ($meta->type[0] === 'entityArray') {
-                    is_array($source) or \PhpRest\abort("参数 '{$meta->name}' 不是数组");
-                    $entityClassPath = $meta->type[1];
-                    $entityBuilder = $app->get(EntityBuilder::class);
-                    $entity = $entityBuilder->build($entityClassPath);
-                    $ary = [];
-                    foreach($source as $d) {
-                        $ary[] = $entity->makeInstanceWithData($app, $d);
+                    if ($meta->type[0] === 'Entity[]') {   
+                        is_array($source) or \PhpRest\abort("请求参数 '{$meta->name}' 不是数组");
+                        $inputs[$meta->name] = [];
+                        foreach($source as $d) {
+                            $inputs[$meta->name][] = $entity->makeInstanceWithData($app, $d);
+                        }                        
+                    } else {
+                        $inputs[$meta->name] = $entity->makeInstanceWithData($app, $source);
                     }
-                    $inputs[$meta->name] = $ary;
-                } else { // 基础类型，验证规则
+                } else {
+                    if (substr($meta->type[0], -2) === '[]') {
+                        // TODO 基础类型数组 参数验证
+                    }
+                  
                     if($meta->validation) {
-                        $vld = new Validator([$meta->name => $source]);
                         $vld->rule($meta->validation, $meta->name);
-                        if (false === $vld->validate()) {
-                            $error = $vld->errors();
-                            \PhpRest\abort($error[$meta->name][0]);
-                        }
                     }
                     $inputs[$meta->name] = $source;
                 }
             }
         }
+
+        $vld = $vld->withData($inputs);
+        $vld->validate() or \PhpBoot\abort(current($vld->errors()));
 
         $params = [];
         foreach($inputs as $_ => $val) {

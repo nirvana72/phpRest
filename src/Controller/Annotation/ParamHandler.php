@@ -21,7 +21,7 @@ class ParamHandler
         $paramMeta or \PhpRest\abort("{$controller->classPath}::{$target} 注解参数 {$name} 没有被使用");
         $paramMeta->description = $desc;
         
-        if ($paramMeta->type[0] === 'entity') {
+        if ($paramMeta->type[0] === 'Entity') {
             if (empty($type) === false) {
                 // 绑定实体类参数，@param 可以不写类型，默认按参数描述指定
                 // 但是 @param 如果写了类型，就需要验证类型一至
@@ -33,11 +33,10 @@ class ParamHandler
             // function 中没有指定参数类型，判断 @param 中指定是否为实体类
             // 带 \ 命名空间 或首字母大写， 认为是实体类
             if (strpos($type, '\\') !== false || preg_match("/^[A-Z]{1}$/", $type[0])) {
-                $realType = 'entity';
+                $realType = 'Entity';
                 if (substr($type, -2) === '[]') {
-                    // 实体类数组
                     $type = substr($type, 0, -2);  
-                    $realType = 'entityArray';                  
+                    $realType = 'Entity[]';                  
                 }
                 if (strpos($type, '\\') === false) {
                     // 如果没写全命名空间，需要通过反射取得全命名空间
@@ -47,8 +46,14 @@ class ParamHandler
                 $paramMeta->type = [$realType, $type];
             } else {
                 // 否则作为基础类型处理
+                $isArray = false;
+                if (substr($type, -2) === '[]') {
+                    $type = substr($type, 0, -2);
+                    $isArray = true;
+                }
                 $cast = \PhpRest\Validator\Validator::typeCast($type);
                 list($realType, $validation, $desc) = $cast;
+                if ($isArray === true) $realType .= '[]'; 
                 $paramMeta->validation = $validation;
                 $paramMeta->type = [$realType, $desc];
             }

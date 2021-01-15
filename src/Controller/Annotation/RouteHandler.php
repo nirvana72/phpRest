@@ -66,10 +66,10 @@ class RouteHandler
             $meta->default     = $param->isOptional()?$param->getDefaultValue():null;
             $meta->description = $paramName; // 默认参数描述为参数名，也就是说@param可以不写, 如果写了则在@param解析时覆盖
 
-            // 参数是不是绑定一个实体类
+            // 参数是不是指定了一个实体类
             $paramClass = $param->getClass(); // 参数类型（对象），不写或写基础数据类型为NULL
             if($paramClass){ // 如果参数是个Class,否则(基础数据类型)这里是null
-                $meta->type = ['entity', $paramClass->getName()];
+                $meta->type = ['Entity', $paramClass->getName()];
                 if ($meta->type[1] === 'Symfony\Component\HttpFoundation\Request') {
                     $meta->type = ['request', ''];
                 }
