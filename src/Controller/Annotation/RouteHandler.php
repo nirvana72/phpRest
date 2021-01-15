@@ -35,7 +35,25 @@ class RouteHandler
         $route->summary     = $ann->parent->summary;
         $route->description = $ann->parent->description;
         $route->requestHandler  = new RequestHandler();
+
+        // 收集 path 参数
+        $routeParser = new \FastRoute\RouteParser\Std();
+        $pathInfo = $routeParser->parse($route->uri);
+        if(isset($pathInfo[0])){
+            foreach ($pathInfo[0] as $i){
+                if(is_array($i)) {
+                    $meta = new ParamMeta();
+                    $meta->name        = $i[0];
+                    $meta->source      = "attributes.{$meta->name}";
+                    $meta->isOptional  = false;
+                    $meta->default     = null;
+                    $meta->description = $meta->name; // 默认参数
+                    $route->requestHandler->addParamMeta($meta);
+                }
+            }
+        }
         
+        $paramSource = in_array($methodType, ['POST', 'PUT']) ? 'request' : 'query';
         // 遍历方法的参数，封装成 ParamMeta 对象, 收集到route->requestHandler里
         $methodParams = $method->getParameters();
         foreach ($methodParams as $param) {
@@ -43,7 +61,7 @@ class RouteHandler
 
             $meta = new ParamMeta();
             $meta->name        = $paramName;
-            $meta->source      = "request.{$paramName}";
+            $meta->source      = "{$paramSource}.{$paramName}";
             $meta->isOptional  = $param->isOptional();
             $meta->default     = $param->isOptional()?$param->getDefaultValue():null;
             $meta->description = $paramName; // 默认参数描述为参数名，也就是说@param可以不写, 如果写了则在@param解析时覆盖
@@ -52,9 +70,12 @@ class RouteHandler
             $paramClass = $param->getClass(); // 参数类型（对象），不写或写基础数据类型为NULL
             if($paramClass){ // 如果参数是个Class,否则(基础数据类型)这里是null
                 $meta->type = ['entity', $paramClass->getName()];
+                if ($meta->type[1] === 'Symfony\Component\HttpFoundation\Request') {
+                    $meta->type = ['request', ''];
+                }
             }
 
-            $route->requestHandler->paramMetas[] = $meta;
+            $route->requestHandler->addParamMeta($meta);
         }
         // 添加路由
         $controller->addRoute($actionName, $route);

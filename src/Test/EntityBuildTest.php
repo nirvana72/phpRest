@@ -16,7 +16,11 @@ class EntityBuildTest
           ],
           'order' => [
             'id' => 1,
-            'code' => '12345678'
+            'code' => '12345678',
+            'info' => [
+              'id' => 123,
+              'desc' => 'info desc'
+            ]
           ]
         ];
         $obj = $entity->makeInstanceWithData($data);

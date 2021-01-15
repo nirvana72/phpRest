@@ -191,10 +191,11 @@ class Application
     public static function createRequestFromSymfony()
     {
         $request = Request::createFromGlobals();
-        if (0 === strpos($request->headers->get('CONTENT_TYPE'), 'application/json')
-            && in_array(strtoupper($request->server->get('REQUEST_METHOD', 'GET')), array('POST', 'PUT', 'DELETE', 'PATCH'))
-        ) {
-            $data = $request->toArray(); // method was introduced in Symfony 5.2.
+        $contentType = $request->headers->get('CONTENT_TYPE');
+        $httpMethod  = $request->getMethod();
+        if (0 === strpos($contentType, 'application/json') && in_array($httpMethod, ['POST', 'PUT'])) {
+            $content = $request->getContent();
+            $data = json_decode($request->getContent(), true);
             $request->request = new ParameterBag($data);
         }
         return $request;
