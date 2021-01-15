@@ -44,7 +44,13 @@ class Validator extends \Valitron\Validator
      * @return [基础类型，验证规则，默认描述]
      */
     public static function typeCast($type) {
-        if(in_array($type, ['int', 'integer'])) {
+        if(empty($type) || $type === 'mixed') {
+            return ['mixed', '', 'any'];
+        }
+        elseif($type === 'string') {
+            return ['string', '', 'string'];
+        }
+        elseif(in_array($type, ['int', 'integer'])) {
             return ['integer', 'integer', 1];
         }
         elseif($type === 'dateTime') {
@@ -71,6 +77,6 @@ class Validator extends \Valitron\Validator
         elseif(in_array($type, ['email', 'url'])) {
             return ['string', $type, $type];
         }
-        return [$type, '', ''];
+        return [$type, '', 'unknow'];
     }
 }

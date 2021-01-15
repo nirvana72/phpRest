@@ -29,14 +29,14 @@ class Route
     public $description = '';
 
     /**
-     * @var RequestHandler
-     */
-    public $requestHandler;
-
-    /**
      * @var HookMeta[]
      */
     public $hooks = [];
+
+    /**
+     * @var RequestHandler
+     */
+    public $requestHandler;
 
     /**
      * @param Application $app

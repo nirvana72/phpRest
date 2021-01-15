@@ -13,11 +13,7 @@ use PhpRest\Controller\Annotation\ReturnHandler;
 use PhpRest\Controller\Annotation\BindHandler;
 use PhpRest\Controller\Annotation\RuleHandler;
 use PhpRest\Controller\Annotation\HookHandler;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\DocBlock\StandardTagFactory;
-use phpDocumentor\Reflection\DocBlockFactory;
-use phpDocumentor\Reflection\FqsenResolver;
-use phpDocumentor\Reflection\TypeResolver;
+use phpDocumentor\Reflection\DocBlock\Tags\Param as ParamTag;
 use Doctrine\Common\Cache\Cache;
 
 class ControllerBuilder
@@ -115,11 +111,11 @@ class ControllerBuilder
      * 解析注解块
      * 
      * @param string $docComment 注解内容
-     * @return object
+     * @return AnnotationBlock
      */
     private function readAnnotationBlock($docComment) 
     {
-        $factory = $this->createDocBlockFactory(); //\phpDocumentor\Reflection\DocBlockFactory::createInstance();
+        $factory = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
         $docBlock = $factory->create($docComment);
 
         $annBlock = new AnnotationBlock();
@@ -127,35 +123,33 @@ class ControllerBuilder
         $annBlock->description = $docBlock->getDescription()->render();
         $tags = $docBlock->getTags(); 
         foreach ($tags as $tag) {
-            $desc = $tag->getDescription();
             $annTag = new AnnotationTag();
-            $annTag->parent      = $annBlock;
-            $annTag->name        = $tag->getName();
-            $annTag->description = $desc->render();
-            $annBlock->children[] = $annTag;
-            if ($desc) {
-                $output = new AnnotationTagsOutput();
-                $desc->render($output);
-                foreach ($output->tags as $child) {
-                    $childTag = new AnnotationTag();
-                    $childTag->parent = $annTag;
-                    $childTag->name = $child->getName();
-                    $childTag->description = $child->getDescription()->render();
-                    $annTag->children[] = $childTag;
+            $annTag->parent = $annBlock;
+            $annTag->name   = $tag->getName();
+            if ($tag instanceof ParamTag) {
+                $type     = (string)$tag->getType();
+                $varName  = $tag->getVariableName();
+                $desc     = $tag->getDescription()->render();
+                if ($type[0] === '\\') $type = substr($type, 1); // phpDocumentor 不可识别的类型会认为是类，在前面加 \
+                if ($desc === '') $desc = $varName;
+
+                $annTag->description = [ $type, $varName, $desc ];
+                if (strpos($annTag->description[2], '{@') !== false) {
+                    $output = new AnnotationTagsOutput();
+                    $tag->getDescription()->render($output);
+                    foreach ($output->tags as $child) {
+                        $childTag = new AnnotationTag();
+                        $childTag->parent = $annTag;
+                        $childTag->name = $child->getName();
+                        $childTag->description = $child->getDescription()->render();
+                        $annTag->children[] = $childTag;
+                    }
                 }
+            } else {
+                $annTag->description = $tag->getDescription()->render();
             }
+            $annBlock->children[] = $annTag;
         }
         return $annBlock;
-    }
-
-    private function createDocBlockFactory()
-    {
-        $fqsenResolver = new FqsenResolver();
-        $tagFactory = new StandardTagFactory($fqsenResolver,[]);
-        $descriptionFactory = new DescriptionFactory($tagFactory);
-        $tagFactory->addService($descriptionFactory);
-        $tagFactory->addService(new TypeResolver($fqsenResolver));
-        $docBlockFactory = new DocBlockFactory($descriptionFactory, $tagFactory);
-        return $docBlockFactory;
     }
 }

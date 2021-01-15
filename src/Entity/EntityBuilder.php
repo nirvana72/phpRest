@@ -10,11 +10,7 @@ use PhpRest\Entity\Annotation\PropertyHandler;
 use PhpRest\Entity\Annotation\FieldHandler;
 use PhpRest\Entity\Annotation\VarHandler;
 use PhpRest\Entity\Annotation\RuleHandler;
-use phpDocumentor\Reflection\DocBlock\DescriptionFactory;
-use phpDocumentor\Reflection\DocBlock\StandardTagFactory;
-use phpDocumentor\Reflection\DocBlockFactory;
-use phpDocumentor\Reflection\FqsenResolver;
-use phpDocumentor\Reflection\TypeResolver;
+use phpDocumentor\Reflection\DocBlock\Tags\Var_ as VarTag;
 
 class EntityBuilder
 {
@@ -29,6 +25,7 @@ class EntityBuilder
 
     public function build($classPath) 
     {
+        // TODO 缓存
         $entity = new Entity($classPath);
         $classRef = new \ReflectionClass($classPath) or \PhpRest\abort("load class $classPath failed");
         $annotationReader = $this->buildAnnotationReader($classRef);
@@ -88,13 +85,13 @@ class EntityBuilder
      * 解析注解块
      * 
      * @param string $docComment 注解内容
-     * @return object
+     * @return AnnotationBlock
      */
     private function readAnnotationBlock($docComment) 
     {
         $annBlock = new AnnotationBlock();
         if ($docComment !== false) {
-            $factory = $this->createDocBlockFactory(); //\phpDocumentor\Reflection\DocBlockFactory::createInstance();
+            $factory = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
             $docBlock = $factory->create($docComment);
             $annBlock->summary     = $docBlock->getSummary();
             $annBlock->description = $docBlock->getDescription()->render();
@@ -103,21 +100,16 @@ class EntityBuilder
                 $annTag = new AnnotationTag();
                 $annTag->parent      = $annBlock;
                 $annTag->name        = $tag->getName();
-                $annTag->description = $tag->getDescription()->render();
+                if ($tag instanceof VarTag) {
+                    $type = (string)$tag->getType();
+                    if ($type[0] === '\\') $type = substr($type, 1);
+                    $annTag->description = $type;
+                } else {
+                    $annTag->description = $tag->getDescription()->render();
+                }
                 $annBlock->children[] = $annTag;
             }
         }
         return $annBlock;
-    }
-
-    private function createDocBlockFactory()
-    {
-        $fqsenResolver = new FqsenResolver();
-        $tagFactory = new StandardTagFactory($fqsenResolver,[]);
-        $descriptionFactory = new DescriptionFactory($tagFactory);
-        $tagFactory->addService($descriptionFactory);
-        $tagFactory->addService(new TypeResolver($fqsenResolver));
-        $docBlockFactory = new DocBlockFactory($descriptionFactory, $tagFactory);
-        return $docBlockFactory;
     }
 }

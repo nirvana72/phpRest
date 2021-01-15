@@ -16,7 +16,7 @@ class BindHandler
         $route = $controller->getRoute($target);
         if ($route === false) { return; }
 
-        list($type, $name, $doc) = ParamHandler::resolveParam($ann->parent->description);
+        list($type, $name, $desc) = $ann->parent->description;
         $paramMeta = $route->requestHandler->getParamMeta($name);
         $paramMeta->source = $ann->description;
     }

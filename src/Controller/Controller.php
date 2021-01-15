@@ -38,17 +38,17 @@ class Controller
      * @var string
      */
     public $modifyTimespan;
+
+    /**
+     * @var HookMeta[]
+     */
+    public $hooks = [];
     
     /**
      * controller下的路由集合
      * @var Route[]
      */
     public $routes = [];
-
-    /**
-     * @var HookMeta[]
-     */
-    public $hooks = [];
     
     /**
      * @param string $classPath controller类的命名空间

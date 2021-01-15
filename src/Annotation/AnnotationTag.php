@@ -24,7 +24,8 @@ class AnnotationTag extends AnnotationBase
     public $name = '';
 
     /**
-     * @var string
+     * when Tag instanceof TagWithType, val is array
+     * @var string|array
      */
     public $description = '';
 }

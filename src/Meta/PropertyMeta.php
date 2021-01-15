@@ -35,7 +35,7 @@ class PropertyMeta
      * 参数类型[类型，默认值描述]
      * @var string[]
      */
-    public $type = ['string', ''];
+    public $type = ['mixed', 'any'];
 
     /**
      * 验证规则
