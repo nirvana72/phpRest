@@ -33,12 +33,18 @@ class ParamHandler
             // function 中没有指定参数类型，判断 @param 中指定是否为实体类
             // 带 \ 命名空间 或首字母大写， 认为是实体类
             if (strpos($type, '\\') !== false || preg_match("/^[A-Z]{1}$/", $type[0])) {
+                $realType = 'entity';
+                if (substr($type, -2) === '[]') {
+                    // 实体类数组
+                    $type = substr($type, 0, -2);  
+                    $realType = 'entityArray';                  
+                }
                 if (strpos($type, '\\') === false) {
                     // 如果没写全命名空间，需要通过反射取得全命名空间
                     $type = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($controller->classPath, $type);
                 }
                 class_exists($type) or \PhpRest\abort("{$controller->classPath}::{$target} @param {$name} 指定的实体类 {$type} 不存在");
-                $paramMeta->type = ['entity', $type];
+                $paramMeta->type = [$realType, $type];
             } else {
                 // 否则作为基础类型处理
                 $cast = \PhpRest\Validator\Validator::typeCast($type);

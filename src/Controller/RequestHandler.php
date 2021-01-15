@@ -61,7 +61,6 @@ class RequestHandler
                 $inputs[$meta->name] = $request;
                 continue;
             }
-            
             $source = \JmesPath\search($meta->source, $requestArray);
             if ($source === null) {
                 $meta->isOptional or \PhpRest\abort("缺少参数 '{$meta->name}'");
@@ -70,13 +69,22 @@ class RequestHandler
                 $source = ArrayAdaptor::strip($source); // 还原适配器封装
                 
                 if ($meta->type[0] === 'entity') {
-                    // 实体参数
                     $entityClassPath = $meta->type[1];
                     $entityBuilder = $app->get(EntityBuilder::class);
                     $entity = $entityBuilder->build($entityClassPath);
                     $inputs[$meta->name] = $entity->makeInstanceWithData($app, $source);
-                } else {
-                    // 基础类型，验证规则
+                }
+                elseif ($meta->type[0] === 'entityArray') {
+                    is_array($source) or \PhpRest\abort("参数 '{$meta->name}' 不是数组");
+                    $entityClassPath = $meta->type[1];
+                    $entityBuilder = $app->get(EntityBuilder::class);
+                    $entity = $entityBuilder->build($entityClassPath);
+                    $ary = [];
+                    foreach($source as $d) {
+                        $ary[] = $entity->makeInstanceWithData($app, $d);
+                    }
+                    $inputs[$meta->name] = $ary;
+                } else { // 基础类型，验证规则
                     if($meta->validation) {
                         $vld = new Validator([$meta->name => $source]);
                         $vld->rule($meta->validation, $meta->name);
@@ -87,8 +95,6 @@ class RequestHandler
                     }
                     $inputs[$meta->name] = $source;
                 }
-
-                // TODO 数组支持
             }
         }
 
