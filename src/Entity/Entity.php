@@ -72,7 +72,12 @@ class Entity
         foreach ($this->properties as $meta) {
             $val = $data[$meta->name];
             if (isset($val)) {
-                if($meta->validation){
+                if ($meta->type[0] === 'entity') {
+                    // 嵌套实体类
+                    $entityBuilder = new EntityBuilder();
+                    $subEntity = $entityBuilder->build($meta->type[1]);
+                    $val = $subEntity->makeInstanceWithData($val);
+                } elseif($meta->validation){
                     $vld = new Validator([$meta->name => $val]);
                     $vld->rule($meta->validation, $meta->name);
                     if (false === $vld->validate()) {
@@ -80,6 +85,7 @@ class Entity
                         \PhpRest\abort($error[$meta->name][0]);
                     }
                 }
+                
                 $obj->{$meta->name} = $val;
             } else {
                 $meta->isOptional or \PhpRest\abort("实体类 {$this->classPath} 缺少属性 '{$meta->name}'");
