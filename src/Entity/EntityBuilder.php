@@ -123,7 +123,8 @@ class EntityBuilder
                     $type = ltrim($type, '\\');
                     $annTag->description = $type;
                 } else {
-                    $annTag->description = $tag->getDescription()->render();
+                    $desc = $tag->getDescription();
+                    $annTag->description = isset($desc) ? $desc->render() : '';
                 }
                 $annBlock->children[] = $annTag;
             }

@@ -70,8 +70,7 @@ class RequestHandler
                 if ($meta->type[0] === 'Entity' || $meta->type[0] === 'Entity[]') {
                     // 参数是个实体，实体验证在Entity创建逻辑中
                     $entityClassPath = $meta->type[1];
-                    $entityBuilder = $app->get(EntityBuilder::class);
-                    $entity = $entityBuilder->build($entityClassPath);
+                    $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
                     if ($meta->type[0] === 'Entity[]') {   
                         is_array($source) or \PhpRest\abort("请求参数 '{$meta->name}' 不是数组");
                         $inputs[$meta->name] = [];

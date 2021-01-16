@@ -80,22 +80,35 @@ class Entity
      * @return object
      */
     public function makeInstanceWithData($app, $data) {
-        $obj = $app->make($this->classPath);
+        // 实例化为一个实体类的对象，必需是一个关联数组
+        \PhpRest\is_assoc_array($data) or \PhpRest\abort("请求参数不是一个对象结构, 不能实例化成一个实体类");
+        $obj = $app->getDIContainer()->make($this->classPath);
         foreach ($this->properties as $property) {
             $val = $data[$property->name];
             if (isset($val)) {
-                // TODO 实体类数组属性支持
-                if ($property->type[0] === 'Entity') {
-                    // 嵌套实体类
-                    $entityBuilder = $app->get(EntityBuilder::class);
-                    $subEntity = $entityBuilder->build($property->type[1]);
-                    $val = $subEntity->makeInstanceWithData($app, $val);
+                if ($property->type[0] === 'Entity' || $property->type[0] === 'Entity[]') {
+                    $entityClassPath = $property->type[1];
+                    $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
+                    if ($property->type[0] === 'Entity[]') {
+                        is_array($val) or \PhpRest\abort("请求参数 '{$property->name}' 不是数组");
+                        $ary = [];
+                        foreach($val as $d) {
+                            $ary[] = $entity->makeInstanceWithData($app, $d);
+                        }
+                        $val = $ary;
+                    } else {
+                        $val = $entity->makeInstanceWithData($app, $val);
+                    }
                 } elseif($property->validation){
+                    $fields = $property->name;
+                    if (substr($property->type[0], -2) === '[]') {
+                        is_array($val) or \PhpRest\abort("请求参数 '{$property->name}' 不是数组");
+                        $fields = "{$property->name}.*";
+                    }
                     $vld = new Validator([$property->name => $val], [], 'zh-cn');
-                    $vld->rule($property->validation, $property->name);
-                    $vld->validate() or \PhpBoot\abort(current($vld->errors())[0]);
+                    $vld->rule($property->validation, $fields);
+                    $vld->validate() or \PhpRest\abort(current($vld->errors())[0]);
                 }
-                // TODO 实体类基础类型数组 验证
                 $obj->{$property->name} = $val;
             } else {
                 $property->isOptional or \PhpRest\abort("实体类 {$this->classPath} 缺少属性 '{$property->name}'");

@@ -55,3 +55,16 @@ if (! function_exists ( 'PhpRest\uncamelize' )) {
         return strtolower(preg_replace('/([a-z])([A-Z])/', "$1" . $separator . "$2", $camelCaps));
     }
 }
+
+if (! function_exists ( 'PhpRest\is_assoc_array' )) {
+    /**
+     * 判断是否为关联数组
+     * @param array $ary
+     * @return bool
+     */
+    function is_assoc_array($ary)
+    {
+        if (is_array($ary) === false) return false;
+        return array_keys($ary) !== range(0, count($ary) - 1);
+    }
+}

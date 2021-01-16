@@ -26,12 +26,6 @@ class PropertyMeta
     public $description;
 
     /**
-     * 对应数据库字段
-     * @var string
-     */
-    public $field;
-
-    /**
      * 参数类型[类型，默认值描述]
      * @var string[]
      */
@@ -48,6 +42,12 @@ class PropertyMeta
      * @var boolean
      */
     public $isOptional = true;
+
+    /**
+     * 对应数据库字段
+     * @var string
+     */
+    public $field;
 
     /**
      * 是否自动增长键
