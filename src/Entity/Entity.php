@@ -93,7 +93,7 @@ class Entity
                 } elseif($property->validation){
                     $vld = new Validator([$property->name => $val], [], 'zh-cn');
                     $vld->rule($property->validation, $property->name);
-                    $vld->validate() or \PhpBoot\abort(current($vld->errors()));
+                    $vld->validate() or \PhpBoot\abort(current($vld->errors())[0]);
                 }
                 // TODO 实体类基础类型数组 验证
                 $obj->{$property->name} = $val;

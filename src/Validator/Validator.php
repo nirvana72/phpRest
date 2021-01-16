@@ -74,7 +74,7 @@ class Validator extends \Valitron\Validator
         elseif($type === 'alphaNum') {
             return ['string', 'alphaNum', '只能包括英文字母(a-z)和数字(0-9)'];
         }
-        elseif(in_array($type, ['email', 'url'])) {
+        elseif(in_array($type, ['email', 'url', 'ip'])) {
             return ['string', $type, $type];
         }
         return [$type, '', 'unknow'];

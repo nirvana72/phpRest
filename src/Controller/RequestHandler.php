@@ -68,6 +68,7 @@ class RequestHandler
                 $source = ArrayAdaptor::strip($source); // 还原适配器封装
                 
                 if ($meta->type[0] === 'Entity' || $meta->type[0] === 'Entity[]') {
+                    // 参数是个实体，实体验证在Entity创建逻辑中
                     $entityClassPath = $meta->type[1];
                     $entityBuilder = $app->get(EntityBuilder::class);
                     $entity = $entityBuilder->build($entityClassPath);
@@ -81,12 +82,17 @@ class RequestHandler
                         $inputs[$meta->name] = $entity->makeInstanceWithData($app, $source);
                     }
                 } else {
-                    if (substr($meta->type[0], -2) === '[]') {
-                        // TODO 基础类型数组 参数验证
-                    }
-                  
                     if($meta->validation) {
-                        $vld->rule($meta->validation, $meta->name);
+                        if (substr($meta->type[0], -2) === '[]') {
+                            // 验证基础数据类型数组
+                            is_array($source) or \PhpRest\abort("请求参数 '{$meta->name}' 不是数组");
+                            $vldAry = new Validator([$meta->name => $source], [], 'zh-cn');
+                            $vldAry->rule($meta->validation, "{$meta->name}.*");
+                            $vldAry->validate() or \PhpRest\abort(current($vldAry->errors())[0]);
+                        }else {
+                            // 验证基础数据类型
+                            $vld->rule($meta->validation, $meta->name);
+                        }
                     }
                     $inputs[$meta->name] = $source;
                 }
@@ -94,7 +100,7 @@ class RequestHandler
         }
 
         $vld = $vld->withData($inputs);
-        $vld->validate() or \PhpBoot\abort(current($vld->errors()));
+        $vld->validate() or \PhpRest\abort(current($vld->errors())[0]);
 
         $params = [];
         foreach($inputs as $_ => $val) {
