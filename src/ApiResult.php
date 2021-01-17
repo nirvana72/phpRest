@@ -4,10 +4,10 @@ namespace PhpRest;
 class ApiResult 
 {
     /**
-     * ret
+     * code
      * @var int
      */
-    public $ret = 1;
+    public $code = 1;
 
     /**
      * msg
@@ -17,8 +17,8 @@ class ApiResult
 
     public $data;
 
-    public function __construct($ret, $msg) {
-        $this->ret = $ret;
+    public function __construct($code, $msg) {
+        $this->code = $code;
         $this->msg = $msg;
     }
 
@@ -28,7 +28,23 @@ class ApiResult
         return $result;
     }
 
-    public static function error($msg, $ret = -1) {
-        return new ApiResult($ret, $msg);
+    public static function error($msg, $code = -1) {
+        return new ApiResult($code, $msg);
+    }
+
+    public static function assert($flag, $msg = []) {
+        $errMsg = '出错了';
+        $sucMsg = 'success';
+        if (is_string($msg)) {
+            $errMsg = $msg;
+        }
+        if (is_array($msg)) {
+            $cnt = count($msg);
+            if ($cnt === 1) { $errMsg = $msgs[0]; }
+            if ($cnt === 2) { $sucMsg = $msgs[0]; $errMsg = $msgs[1]; }
+        }
+        $code = $flag ? 1 : -1;
+        $msg = $flag ? $successMsg : $errMsg;
+        return new ApiResult($code, $msg);
     }
 }

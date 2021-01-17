@@ -18,7 +18,7 @@ if (!function_exists('PhpRest\abort')) {
     }
 }
 
-if (! function_exists ( 'PhpRest\dump' )) {
+if (! function_exists( 'PhpRest\dump' )) {
     /**
      * 浏览器友好的变量输出
      * @param mixed $vars 要输出的变量
@@ -45,26 +45,61 @@ if (! function_exists ( 'PhpRest\dump' )) {
     }
 }
 
-if (! function_exists ( 'PhpRest\uncamelize' )) {
+if (! function_exists( 'PhpRest\uncamelize' )) {
     /**
      * 驼峰转下划线
      * @return void
      */
-    function uncamelize($camelCaps, $separator = '_')
+    function uncamelize($str, $separator = '_')
     {
-        return strtolower(preg_replace('/([a-z])([A-Z])/', "$1" . $separator . "$2", $camelCaps));
+        return strtolower(preg_replace('/([a-z])([A-Z])/', "$1" . $separator . "$2", $str));
     }
 }
 
-if (! function_exists ( 'PhpRest\is_assoc_array' )) {
+if (! function_exists( 'PhpRest\camelize' )) {
+    /**
+     * 下划线转驼峰
+     * @return void
+     */
+    function camelize($str, $separator = '_')
+    {
+        $str = $separator. str_replace($separator, ' ', strtolower($str));
+        return ltrim(str_replace(' ', '', ucwords($str)), $separator );
+    }
+}
+
+if (! function_exists( 'PhpRest\isAssocArray' )) {
     /**
      * 判断是否为关联数组
      * @param array $ary
      * @return bool
      */
-    function is_assoc_array($ary)
+    function isAssocArray($ary)
     {
         if (is_array($ary) === false) return false;
         return array_keys($ary) !== range(0, count($ary) - 1);
+    }
+}
+
+if (! function_exists( 'PhpRest\camelizeArrayKey' )) {
+    /**
+     * 将关联数组转换成驼峰KEY
+     * @param array $ary
+     * @return array
+     */
+    function camelizeArrayKey($ary)
+    {
+        if (is_array($ary) === false) return $ary;
+        if (\PhpRest\isAssocArray($ary)) { $ary = [ $ary ]; }
+        $tmpAry = [];
+        foreach($ary as $item) {
+            $tmp = [];
+            foreach($item as $k => $v) {
+                $k = \PhpRest\camelize($k);
+                $tmp[$k] = $v;
+            }
+            array_push($tmpAry, $tmp);
+        }
+        return $tmpAry;
     }
 }

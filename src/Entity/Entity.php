@@ -81,7 +81,7 @@ class Entity
      */
     public function makeInstanceWithData($app, $data) {
         // 实例化为一个实体类的对象，必需是一个关联数组
-        \PhpRest\is_assoc_array($data) or \PhpRest\abort("请求参数不是一个对象结构, 不能实例化成一个实体类");
+        \PhpRest\isAssocArray($data) or \PhpRest\abort("请求参数不是一个对象结构, 不能实例化成一个实体类");
         $obj = $app->getDIContainer()->make($this->classPath);
         foreach ($this->properties as $property) {
             $val = $data[$property->name];
