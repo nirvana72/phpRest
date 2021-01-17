@@ -75,14 +75,16 @@ class Entity
     /**
      * 创建实体
      * 
-     * @param $app Application
-     * @param $data 数据
+     * @param Application $app
+     * @param array  $data          数据
+     * @param bool   $withValidator 是否需要验证
+     * @param object $obj           引用
      * @return object
      */
-    public function makeInstanceWithData($app, $data) {
+    public function makeInstanceWithData($app, $data, $withValidator = true, &$obj = null) {
         // 实例化为一个实体类的对象，必需是一个关联数组
         \PhpRest\isAssocArray($data) or \PhpRest\abort("请求参数不是一个对象结构, 不能实例化成一个实体类");
-        $obj = $app->getDIContainer()->make($this->classPath);
+        if ($obj === null) $obj = $app->make($this->classPath);
         foreach ($this->properties as $property) {
             $val = $data[$property->name];
             if (isset($val)) {
@@ -93,13 +95,13 @@ class Entity
                         is_array($val) or \PhpRest\abort("请求参数 '{$property->name}' 不是数组");
                         $ary = [];
                         foreach($val as $d) {
-                            $ary[] = $entity->makeInstanceWithData($app, $d);
+                            $ary[] = $entity->makeInstanceWithData($app, $d, $withValidator);
                         }
                         $val = $ary;
                     } else {
-                        $val = $entity->makeInstanceWithData($app, $val);
+                        $val = $entity->makeInstanceWithData($app, $val, $withValidator);
                     }
-                } elseif($property->validation){
+                } elseif($withValidator && $property->validation){
                     $fields = $property->name;
                     if (substr($property->type[0], -2) === '[]') {
                         is_array($val) or \PhpRest\abort("请求参数 '{$property->name}' 不是数组");

@@ -8,6 +8,8 @@ use PhpRest\Entity\Annotation\ClassHandler;
 use PhpRest\Entity\Annotation\TableHandler;
 use PhpRest\Entity\Annotation\PropertyHandler;
 use PhpRest\Entity\Annotation\FieldHandler;
+use PhpRest\Entity\Annotation\PkHandler;
+use PhpRest\Entity\Annotation\AutoHandler;
 use PhpRest\Entity\Annotation\VarHandler;
 use PhpRest\Entity\Annotation\RuleHandler;
 use phpDocumentor\Reflection\DocBlock\Tags\Var_ as VarTag;
@@ -25,6 +27,8 @@ class EntityBuilder
         [TableHandler::class,     "class.children[?name=='table']"],
         [PropertyHandler::class,  'properties'],
         [FieldHandler::class,     "properties.*.children[?name=='field'][]"],
+        [PkHandler::class,        "properties.*.children[?name=='pk'][]"],
+        [AutoHandler::class,      "properties.*.children[?name=='auto'][]"],
         [VarHandler::class,       "properties.*.children[?name=='var'][]"],
         [RuleHandler::class,      "properties.*.children[?name=='rule'][]"],
     ];

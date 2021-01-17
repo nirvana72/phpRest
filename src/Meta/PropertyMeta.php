@@ -50,10 +50,16 @@ class PropertyMeta
     public $field;
 
     /**
+     * 是否主键
+     * @var boolean
+     */
+    public $isPrimaryKey = false;
+
+    /**
      * 是否自动增长键
      * @var boolean
      */
-    public $autoIncrement = false;
+    public $isAutoIncrement = false;
 
     public function __construct($name) 
     {

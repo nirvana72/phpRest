@@ -4,7 +4,7 @@ namespace PhpRest\Entity\Annotation;
 use PhpRest\Entity\Entity;
 use PhpRest\Annotation\AnnotationTag;
 
-class FieldHandler
+class PkHandler
 {
     /**
      * @param Entity $container
@@ -16,6 +16,6 @@ class FieldHandler
         $property = $entity->getProperty($target);
         if ($property === false) { return; }
 
-        $property->field = $ann->description;
+        $property->isPrimaryKey = true;
     }
 }

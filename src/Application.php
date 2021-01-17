@@ -222,6 +222,15 @@ class Application
     }
 
     /**
+     * @param string $id
+     * @return object
+     */
+    public function make($id) 
+    {
+        return $this->container->make($id);
+    }
+
+    /**
      * @return DI\Container
      */
     public function getDIContainer() 

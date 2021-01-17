@@ -74,4 +74,10 @@ class EntityBuildTest
         $obj = $entity->makeInstanceWithData($this->app, $data);
         \PhpRest\dump($obj);
     }
+
+    public function test5() {
+      $builder = $this->app->get(\PhpRest\Entity\EntityBuilder::class);
+      $entity = $builder->build('Example\Entity\Orm\User');
+      \PhpRest\dump($entity);
+  }
 }

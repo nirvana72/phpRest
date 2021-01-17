@@ -59,7 +59,7 @@ class Route
                 $params['method'] = $this->method;
                 $params['uri']    = $this->uri;
                 $params['params'] = $hookMeta->params;
-                $hook = $app->getDIContainer()->make($hookMeta->classPath, $params);
+                $hook = $app->make($hookMeta->classPath, $params);
                 return $hook->handle($request, $next);
             };
         }
