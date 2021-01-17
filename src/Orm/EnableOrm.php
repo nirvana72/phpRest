@@ -42,6 +42,7 @@ trait EnableOrm
             $columns[$property->field] = $this->{$property->name};
         }
         $data = $this->db->get($entity->table, $columns, $where);
+        $data = \PhpRest\camelizeArrayKey($data);
         $entity->makeInstanceWithData($this->app, $data, false, $this);
     }
 
