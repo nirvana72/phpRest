@@ -63,7 +63,9 @@ class Application
             // 默认错误处理器
             IExceptionHandler::class => \DI\create(ExceptionHandler::class),
             // 默认输出处理器
-            IResponseRender::class => \DI\create(ResponseRender::class)
+            IResponseRender::class => \DI\create(ResponseRender::class),
+            // 数据库配置
+            \Medoo\Medoo::class => \DI\create()->constructor(\DI\get('database'))
         ];
 
         // // 缓存对象
