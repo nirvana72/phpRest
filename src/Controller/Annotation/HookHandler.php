@@ -2,7 +2,7 @@
 namespace PhpRest\Controller\Annotation;
 
 use PhpRest\Controller\Controller;
-use PhpRest\Controller\Hook\HookInterface;
+use PhpRest\Hook\HookInterface;
 use PhpRest\Annotation\AnnotationTag;
 use PhpRest\Meta\HookMeta;
 

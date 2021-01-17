@@ -43,6 +43,13 @@ class Application
     private $routes = [];
 
     /**
+     * 全局Hook
+     * 
+     * @var string[] Hook类全命名空间
+     */
+    private $globalHooks = [];
+
+    /**
      * 创建app对象
      * 
      * @param string|array $conf
@@ -152,23 +159,34 @@ class Application
         // FastRoute匹配当前路由
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
         try {
-            if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {
-                if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
-                    $request->attributes->add($routeInfo[2]);
-                }
-                list($classPath, $actionName) = $routeInfo[1];
-
-                $cache = $app->get(Cache::class);
-                $cacheKey = 'controllerBuilder::build' . md5($classPath);
-                $controller = $cache->fetch($cacheKey);
-                if ($controller === false) {
-                    $controller = $app->controllerBuilder->build($classPath);
-                    $cache->save($cacheKey, $controller);
-                }
+            if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {                
                 
-                $routeInstance = $controller->getRoute($actionName);
-                $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
-                $response = $routeInstance->invoke($app, $request, $classPath, $actionName);
+                $next = function($request) use ($app, $routeInfo) {
+                    if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
+                        $request->attributes->add($routeInfo[2]);
+                    }
+                    list($classPath, $actionName) = $routeInfo[1];
+    
+                    $cache = $app->get(Cache::class);
+                    $cacheKey = 'controllerBuilder::build' . md5($classPath);
+                    $controller = $cache->fetch($cacheKey);
+                    if ($controller === false) {
+                        $controller = $app->controllerBuilder->build($classPath);
+                        $cache->save($cacheKey, $controller);
+                    }
+
+                    $routeInstance = $controller->getRoute($actionName);
+                    $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
+                    return $routeInstance->invoke($app, $request, $classPath, $actionName);
+                };
+
+                foreach (array_reverse($app->globalHooks) as $hookName){
+                    $next = function($request)use($app, $hookName, $next){
+                        return $app->get($hookName)->handle($request, $next);
+                    };
+                }
+
+                $response = $next($request);
                 $response->send();
 
             } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
@@ -182,6 +200,14 @@ class Application
             $exceptionHandler = $app->get(IExceptionHandler::class);
             $exceptionHandler->render($e)->send();
         }
+    }
+
+    /**
+     * @param \string[] $globalHooks
+     */
+    public function addGlobalHooks($globalHooks)
+    {
+        $this->globalHooks += $globalHooks;
     }
 
     /**

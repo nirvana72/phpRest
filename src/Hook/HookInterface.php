@@ -1,6 +1,5 @@
 <?php
-
-namespace PhpRest\Controller\Hook;
+namespace PhpRest\Hook;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
