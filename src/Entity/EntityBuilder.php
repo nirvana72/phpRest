@@ -82,18 +82,29 @@ class EntityBuilder
         $reader->class->position = 'class';
         
         // 遍历属性
-        foreach ($classRef->getProperties() as $property) {
+        foreach ($classRef->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
           
             // 过滤
             if ($property->isDefault() === false ||
                 $property->isStatic()  === true || 
                 $property->isPublic()  === false) { continue; }
             
-            $docComment = $property->getDocComment();
-            $block = $this->readAnnotationBlock($docComment);
+            $block = $this->readAnnotationBlock($property->getDocComment());
             $block->name = $property->getName();
             $block->position = 'property';
             $reader->properties[$block->name] = $block;
+        }
+
+        while ($classRef = $classRef->getParentClass()) {
+            foreach ($classRef->getProperties(\ReflectionProperty::IS_PUBLIC) as $i) {
+                if ($property->isStatic()  === true || 
+                    $property->isPublic()  === false) { continue; }
+
+                $block = $this->readAnnotationBlock($property->getDocComment());
+                $block->name = $i->getName();
+                $block->position = 'property';
+                $reader->properties[$block->name] = $block;
+            }
         }
 
         return $reader;

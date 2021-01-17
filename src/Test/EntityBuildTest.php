@@ -52,14 +52,26 @@ class EntityBuildTest
     }
 
     public function test3() {
-      $builder = $this->app->get(\PhpRest\Entity\EntityBuilder::class);
-      $entity = $builder->build('Example\Entity\User');
-      $data = [
-        'id' => 11,
-        'name' => '苏州蓝吧',
-        'info' => '1231@qq.com'
-      ];
-      $obj = $entity->makeInstanceWithData($this->app, $data);
-      \PhpRest\dump($obj);
-  }
+        $builder = $this->app->get(\PhpRest\Entity\EntityBuilder::class);
+        $entity = $builder->build('Example\Entity\User');
+        $data = [
+          'id' => 11,
+          'name' => '苏州蓝吧',
+          'info' => '1231@qq.com'
+        ];
+        $obj = $entity->makeInstanceWithData($this->app, $data);
+        \PhpRest\dump($obj);
+    }
+
+    public function test4() {
+        $builder = $this->app->get(\PhpRest\Entity\EntityBuilder::class);
+        $entity = $builder->build('Example\Entity\Inherit\ObjSon');
+        $data = [
+          'id' => 11,
+          'name' => 'jack',
+          'age' => 10
+        ];
+        $obj = $entity->makeInstanceWithData($this->app, $data);
+        \PhpRest\dump($obj);
+    }
 }
