@@ -13,6 +13,7 @@ use PhpRest\Controller\Annotation\ReturnHandler;
 use PhpRest\Controller\Annotation\BindHandler;
 use PhpRest\Controller\Annotation\RuleHandler;
 use PhpRest\Controller\Annotation\HookHandler;
+use PhpRest\Exception\BadCodeException;
 use phpDocumentor\Reflection\DocBlock\Tags\Param as ParamTag;
 use Doctrine\Common\Cache\Cache;
 
@@ -46,7 +47,7 @@ class ControllerBuilder
            
             // echo "测试输出：controllerBuilder::build {$classPath}<br>\r\n";
             $controller = new Controller($classPath);
-            $classRef = new \ReflectionClass($classPath) or \PhpRest\abort("load class $classPath failed");
+            $classRef = new \ReflectionClass($classPath) or \PhpRest\abort(new BadCodeException("load class $classPath failed"));
             $controller->filePath = $classRef->getFileName();
             $controller->modifyTimespan = filemtime($controller->filePath);
             

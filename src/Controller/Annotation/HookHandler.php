@@ -5,6 +5,7 @@ use PhpRest\Controller\Controller;
 use PhpRest\Hook\HookInterface;
 use PhpRest\Annotation\AnnotationTag;
 use PhpRest\Meta\HookMeta;
+use PhpRest\Exception\BadCodeException;
 
 class HookHandler
 {
@@ -23,7 +24,7 @@ class HookHandler
         $hook->classPath = $array[0];
         $hook->params    = $array[1];
 
-        is_subclass_of($hook->classPath, HookInterface::class) or \PhpRest\abort("{$hook->classPath} 必须继承于 HookInterface");
+        is_subclass_of($hook->classPath, HookInterface::class) or \PhpRest\abort(new BadCodeException("{$hook->classPath} 必须继承于 HookInterface"));
 
         if ($ann->parent->position === 'class') {
             $controller->hooks[$hook->classPath] = $hook;

@@ -1,9 +1,8 @@
 <?php
 namespace PhpRest;
 
-if (!function_exists('PhpRest\abort')) {
+if (! function_exists('PhpRest\abort')) {
     /**
-     * 抛出异常, 并记录日志
      * @param string|\Throwable $error
      * @throws \Throwable
      */

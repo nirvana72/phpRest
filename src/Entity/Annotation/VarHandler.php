@@ -3,6 +3,7 @@ namespace PhpRest\Entity\Annotation;
 
 use PhpRest\Entity\Entity;
 use PhpRest\Annotation\AnnotationTag;
+use PhpRest\Exception\BadCodeException;
 
 class VarHandler
 {
@@ -29,7 +30,7 @@ class VarHandler
                 // 如果没写全命名空间，需要通过反射取得全命名空间
                 $type = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($entity->classPath, $type);
             }
-            class_exists($type) or \PhpRest\abort("{$entity->classPath} 属性 {$ann->name} 指定的实体类 {$type} 不存在");
+            class_exists($type) or \PhpRest\abort(new BadCodeException("{$entity->classPath} 属性 {$ann->name} 指定的实体类 {$type} 不存在"));
             $property->type = [$realType, $type];
         } else {
             $isArray = false;

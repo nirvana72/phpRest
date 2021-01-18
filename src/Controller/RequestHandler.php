@@ -6,6 +6,7 @@ use PhpRest\Meta\ParamMeta;
 use PhpRest\Utils\ArrayAdaptor;
 use PhpRest\Validator\Validator;
 use PhpRest\Entity\EntityBuilder;
+use PhpRest\Exception\BadArgumentException;
 
 class RequestHandler
 {
@@ -62,7 +63,7 @@ class RequestHandler
             }
             $source = \JmesPath\search($meta->source, $requestArray);
             if ($source === null) {
-                $meta->isOptional or \PhpRest\abort("请求参数缺少 '{$meta->name}'");
+                $meta->isOptional or \PhpRest\abort(new BadArgumentException("请求参数缺少 '{$meta->name}'"));
                 $inputs[$meta->name] = $meta->default;
             } else {
                 $source = ArrayAdaptor::strip($source); // 还原适配器封装
@@ -72,7 +73,7 @@ class RequestHandler
                     $entityClassPath = $meta->type[1];
                     $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
                     if ($meta->type[0] === 'Entity[]') {   
-                        is_array($source) or \PhpRest\abort("请求参数 '{$meta->name}' 不是数组");
+                        is_array($source) or \PhpRest\abort(new BadArgumentException("请求参数 '{$meta->name}' 不是数组"));
                         $inputs[$meta->name] = [];
                         foreach($source as $d) {
                             $inputs[$meta->name][] = $entity->makeInstanceWithData($app, $d);
@@ -84,10 +85,10 @@ class RequestHandler
                     if($meta->validation) {
                         if (substr($meta->type[0], -2) === '[]') {
                             // 验证基础数据类型数组
-                            is_array($source) or \PhpRest\abort("请求参数 '{$meta->name}' 不是数组");
+                            is_array($source) or \PhpRest\abort(new BadArgumentException("请求参数 '{$meta->name}' 不是数组"));
                             $vldAry = new Validator([$meta->name => $source], [], 'zh-cn');
                             $vldAry->rule($meta->validation, "{$meta->name}.*");
-                            $vldAry->validate() or \PhpRest\abort(current($vldAry->errors())[0]);
+                            $vldAry->validate() or \PhpRest\abort(new BadArgumentException(current($vldAry->errors())[0]));
                         }else {
                             // 验证基础数据类型
                             $vld->rule($meta->validation, $meta->name);
@@ -99,7 +100,7 @@ class RequestHandler
         }
 
         $vld = $vld->withData($inputs);
-        $vld->validate() or \PhpRest\abort(current($vld->errors())[0]);
+        $vld->validate() or \PhpRest\abort(new BadArgumentException(current($vld->errors())[0]));
 
         $params = [];
         foreach($inputs as $_ => $val) {

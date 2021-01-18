@@ -12,6 +12,7 @@ use PhpRest\Entity\Annotation\PkHandler;
 use PhpRest\Entity\Annotation\AutoHandler;
 use PhpRest\Entity\Annotation\VarHandler;
 use PhpRest\Entity\Annotation\RuleHandler;
+use PhpRest\Exception\BadCodeException;
 use phpDocumentor\Reflection\DocBlock\Tags\Var_ as VarTag;
 
 class EntityBuilder
@@ -43,7 +44,7 @@ class EntityBuilder
 
             // echo "测试输出 entityBuilder::build {$classPath}<br>\r\n";
             $entity = new Entity($classPath);
-            $classRef = new \ReflectionClass($classPath) or \PhpRest\abort("load class $classPath failed");
+            $classRef = new \ReflectionClass($classPath) or \PhpRest\abort(new BadCodeException("load class $classPath failed"));
             $entity->filePath = $classRef->getFileName();
             $entity->modifyTimespan = filemtime($entity->filePath);
 

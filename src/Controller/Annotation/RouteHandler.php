@@ -7,6 +7,7 @@ use PhpRest\Controller\Route;
 use PhpRest\Controller\RequestHandler;
 use PhpRest\Controller\ResponseHandler;
 use PhpRest\Meta\ParamMeta;
+use PhpRest\Exception\BadCodeException;
 
 class RouteHandler
 {
@@ -17,12 +18,12 @@ class RouteHandler
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
         $array = explode(' ', trim(preg_replace ( "/\s(?=\s)/","\\1", $ann->description)));
-        count($array) === 2 or \PhpRest\abort("{$controller->classPath}->{$ann->parent->summary} @route 注解格式不正确");
+        count($array) === 2 or \PhpRest\abort(new BadCodeException("{$controller->classPath}->{$ann->parent->summary} @route 注解格式不正确"));
 
         $methodType = strtoupper($array[0]);
         $methodUri  = $array[1]; // 支持 path 参数, 规则参考FastRoute
         $actionName = $ann->parent->name; // 方法名
-        in_array($methodType, ['GET','POST','PUT','HEAD','PATCH','OPTIONS','DELETE']) or \PhpRest\abort("{$controller->classPath}::{$ann->parent->summary} @route 注解方法不支持");
+        in_array($methodType, ['GET','POST','PUT','HEAD','PATCH','OPTIONS','DELETE']) or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$ann->parent->summary} @route 注解方法不支持"));
         
         // 反射类文件对象
         $classRef = new \ReflectionClass($controller->classPath);

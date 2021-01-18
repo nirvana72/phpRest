@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use PhpRest\Exception\ExceptionHandlerInterface;
 use PhpRest\Exception\ExceptionHandler;
+use PhpRest\Exception\BadRequestException;
 use PhpRest\Render\ResponseRenderInterface;
 use PhpRest\Render\ResponseRender;
 use Doctrine\Common\Cache\Cache;
@@ -144,14 +145,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
                     }
                     list($classPath, $actionName) = $routeInfo[1];
     
-                    $cache = $app->get(Cache::class);
-                    $cacheKey = 'controllerBuilder::build' . md5($classPath);
-                    $controller = $cache->fetch($cacheKey);
-                    if ($controller === false) {
-                        $controller = $app->controllerBuilder->build($classPath);
-                        $cache->save($cacheKey, $controller);
-                    }
-
+                    $controller = $app->controllerBuilder->build($classPath);
                     $routeInstance = $controller->getRoute($actionName);
                     $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
                     return $routeInstance->invoke($app, $request, $classPath, $actionName);
@@ -167,11 +161,11 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
                 $response->send();
 
             } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
-                \PhpRest\abort("{$uri} 访问地址不存在");
+                throw new BadRequestException("{$uri} 访问地址不存在");
             } elseif ($routeInfo[0] == \FastRoute\Dispatcher::METHOD_NOT_ALLOWED) {
-                \PhpRest\abort("{$uri} 不支持 {$httpMethod} 请求");
+                throw new BadRequestException("{$uri} 不支持 {$httpMethod} 请求");
             } else {
-                \PhpRest\abort("unknown dispatch return {$routeInfo[0]}");
+                throw new BadRequestException("unknown dispatch return {$routeInfo[0]}");
             }
         } catch (\Throwable $e) {
             $exceptionHandler = $app->get(ExceptionHandlerInterface::class);
