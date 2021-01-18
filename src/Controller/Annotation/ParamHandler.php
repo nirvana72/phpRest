@@ -20,8 +20,8 @@ class ParamHandler
 
         $paramMeta = $route->requestHandler->getParamMeta($name);
         $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 注解参数 {$name} 没有被使用"));
-        $paramMeta->description = $desc;
-        
+        $paramMeta->description = explode('{@', $desc)[0];
+
         if ($paramMeta->type[0] === 'Entity') {
             if (empty($type) === false) {
                 // 绑定实体类参数，@param 可以不写类型，默认按参数描述指定
