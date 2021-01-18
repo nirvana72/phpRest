@@ -1,7 +1,7 @@
 <?php
 namespace PhpRest\Render;
 
-interface IResponseRender
+interface ResponseRenderInterface
 {
     /**
      * @param $return

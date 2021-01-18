@@ -3,7 +3,7 @@ namespace PhpRest\Exception;
 
 use Symfony\Component\HttpFoundation\Response;
 
-interface IExceptionHandler
+interface ExceptionHandlerInterface
 {
     /**
      * @param \Throwable $e

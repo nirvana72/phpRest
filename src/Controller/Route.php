@@ -2,7 +2,7 @@
 namespace PhpRest\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use PhpRest\Render\IResponseRender;
+use PhpRest\Render\ResponseRenderInterface;
 use PhpRest\Meta\HookMeta;
 
 class Route
@@ -50,7 +50,7 @@ class Route
             $params = $this->requestHandler->makeParams($app, $request);
             $ctlClass = $app->get($classPath);
             $res = call_user_func_array([$ctlClass, $actionName], $params);
-            $responseRender = $app->get(IResponseRender::class);
+            $responseRender = $app->get(ResponseRenderInterface::class);
             return $responseRender->render($res);
         };
 

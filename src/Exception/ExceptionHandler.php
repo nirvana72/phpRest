@@ -4,7 +4,7 @@ namespace PhpRest\Exception;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class ExceptionHandler implements IExceptionHandler
+class ExceptionHandler implements ExceptionHandlerInterface
 {
     /**
      * @param \Throwable $e

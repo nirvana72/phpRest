@@ -3,7 +3,7 @@ namespace PhpRest\Render;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class ResponseRender implements IResponseRender
+class ResponseRender implements ResponseRenderInterface
 {
     /**
      * @param $return

@@ -9,46 +9,21 @@
 
 namespace PhpRest;
 
+use Psr\Container\ContainerInterface;
+use DI\FactoryInterface;
+use Invoker\InvokerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\ParameterBag;
-use PhpRest\Exception\IExceptionHandler;
+use PhpRest\Exception\ExceptionHandlerInterface;
 use PhpRest\Exception\ExceptionHandler;
-use PhpRest\Render\IResponseRender;
+use PhpRest\Render\ResponseRenderInterface;
 use PhpRest\Render\ResponseRender;
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Cache\ApcuCache;
 use Doctrine\Common\Cache\FilesystemCache;
 
-class Application
+class Application implements ContainerInterface, FactoryInterface, InvokerInterface
 {
-    /**
-     * @Inject
-     * @var \PhpRest\Controller\ControllerBuilder
-     */
-    private $controllerBuilder;
-
-    /** 
-     * @Inject
-     * @var \DI\Container 
-     * */
-    private $container;
-
-    /** 
-     * 所有路由信息(非 Route 对象)
-     * 
-     * ?? 是否要缓存，缓存了的话修改代码就不会识别了，但是生产环境中通常又不会修改文件
-     * 
-     * @var array 
-     * */
-    private $routes = [];
-
-    /**
-     * 全局Hook
-     * 
-     * @var string[] Hook类全命名空间
-     */
-    private $globalHooks = [];
-
     /**
      * 创建app对象
      * 
@@ -61,9 +36,9 @@ class Application
             // 默认request对象来自 symfony
             Request::class => \DI\factory([Application::class, 'createRequestFromSymfony']),
             // 默认错误处理器
-            IExceptionHandler::class => \DI\create(ExceptionHandler::class),
+            ExceptionHandlerInterface::class => \DI\create(ExceptionHandler::class),
             // 默认输出处理器
-            IResponseRender::class => \DI\create(ResponseRender::class),
+            ResponseRenderInterface::class => \DI\create(ResponseRender::class),
             // 数据库配置
             \Medoo\Medoo::class => \DI\create()->constructor(\DI\get('database'))
         ];
@@ -127,7 +102,7 @@ class Application
                 $this->routes[] = [$route->method, $route->uri, $classPath, $actionName];
             }
         } catch (\Throwable $e) {
-            $exceptionHandler = $this->get(IExceptionHandler::class);
+            $exceptionHandler = $this->get(ExceptionHandlerInterface::class);
             $exceptionHandler->render($e)->send();
             exit;
         }
@@ -199,22 +174,13 @@ class Application
                 \PhpRest\abort("unknown dispatch return {$routeInfo[0]}");
             }
         } catch (\Throwable $e) {
-            $exceptionHandler = $app->get(IExceptionHandler::class);
+            $exceptionHandler = $app->get(ExceptionHandlerInterface::class);
             $exceptionHandler->render($e)->send();
         }
     }
 
     /**
-     * @param \string[] $globalHooks
-     */
-    public function addGlobalHooks($globalHooks)
-    {
-        $this->globalHooks += $globalHooks;
-    }
-
-    /**
-     * @param string $id
-     * @return object
+     * impl Psr\Container\ContainerInterface
      */
     public function get($id) 
     {
@@ -222,20 +188,27 @@ class Application
     }
 
     /**
-     * @param string $id
-     * @return object
+     * impl Psr\Container\ContainerInterface
      */
-    public function make($id) 
+    public function has($id)
     {
-        return $this->container->make($id);
+        return $this->container->has($id);
     }
 
     /**
-     * @return DI\Container
+     * impl DI\FactoryInterface
      */
-    public function getDIContainer() 
+    public function make($name, array $parameters = []) 
     {
-        return $this->container;
+        return $this->container->make($name, $parameters);
+    }
+
+    /**
+     * impl Invoker\InvokerInterface
+     */
+    public function call($callable, array $parameters = [])
+    {
+        return $this->container->call($callable, $parameters);
     }
 
     public static function createRequestFromSymfony()
@@ -250,4 +223,40 @@ class Application
         }
         return $request;
     }
+    
+    /**
+     * @param \string[] $globalHooks
+     */
+    public function addGlobalHooks($globalHooks)
+    {
+        $this->globalHooks += $globalHooks;
+    }
+
+    /**
+     * @Inject
+     * @var \PhpRest\Controller\ControllerBuilder
+     */
+    private $controllerBuilder;
+
+    /** 
+     * @Inject
+     * @var \DI\Container 
+     * */
+    private $container;
+
+    /** 
+     * 所有路由信息(非 Route 对象)
+     * 
+     * ?? 是否要缓存，缓存了的话修改代码就不会识别了，但是生产环境中通常又不会修改文件
+     * 
+     * @var array 
+     * */
+    private $routes = [];
+
+    /**
+     * 全局Hook
+     * 
+     * @var string[] Hook类全命名空间
+     */
+    private $globalHooks = [];
 }

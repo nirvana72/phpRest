@@ -27,9 +27,8 @@ class CorsHook implements HookInterface
         ];
 
         $crosConfig = [];
-        $diController = $this->app->getDIContainer();
-        if ($diController->has('crosHeaders')) {
-            $crosConfig = $diController->get('crosHeaders');
+        if ($this->app->has('crosHeaders')) {
+            $crosConfig = $this->app->get('crosHeaders');
         }
         $headers = array_merge($default, $crosConfig);
 
