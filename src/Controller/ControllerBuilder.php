@@ -41,7 +41,7 @@ class ControllerBuilder
     {
         $cacheKey = 'ControllerBuilder::build' . md5($classPath);
         $controller = $this->cache->fetch($cacheKey);
-
+        
         if ($controller === false || 
             $controller->modifyTimespan !== filemtime($controller->filePath)) {
            
@@ -84,11 +84,11 @@ class ControllerBuilder
 
         if ($docComment === false) { 
             // class 没写注解, 默认可以不写注解
-            $reader->class = new AnnotationBlock();            
-            $reader->class->summary = $classRef->getShortName();
+            $reader->class = new AnnotationBlock();
         } else {
             $reader->class = $this->readAnnotationBlock($docComment);
         }
+        $reader->class->summary = $reader->class->summary?:$classRef->getShortName();
         $reader->class->position = 'class';
         
         // 遍历controller下的方法
