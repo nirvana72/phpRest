@@ -16,13 +16,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use PhpRest\Exception\ExceptionHandlerInterface;
 use PhpRest\Exception\ExceptionHandler;
+use PhpRest\Exception\BadCodeException;
 use PhpRest\Exception\BadRequestException;
 use PhpRest\Render\ResponseRenderInterface;
 use PhpRest\Render\ResponseRender;
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Cache\ApcuCache;
 use Doctrine\Common\Cache\FilesystemCache;
-
+// TODO command
+// TODO swagger
 class Application implements ContainerInterface, FactoryInterface, InvokerInterface
 {
     /**
@@ -31,7 +33,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @param string|array $conf
      * @return Application
      */
-    public static function createDefault($conf = []) 
+    public static function createDefault($conf = [])
     {
         $default = [
             // 默认request对象来自 symfony
@@ -44,15 +46,13 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
             \Medoo\Medoo::class => \DI\create()->constructor(\DI\get('database'))
         ];
 
-        // // 缓存对象
-        // if( function_exists('apcu_fetch') ) {
-        //     $default += [ Cache::class => \DI\create(ApcuCache::class) ];
-        // } else {
-        //     $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
-        // }
-        
-         // $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', $_SERVER['DOCUMENT_ROOT'] . '/../cache/') ];
-        $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
+        // 缓存对象
+        if( function_exists('apcu_fetch') ) {
+            $default += [ Cache::class => \DI\create(ApcuCache::class) ];
+            // $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
+        } else {
+            $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
+        }
 
         $builder = new \DI\ContainerBuilder();
         $builder->addDefinitions($default);
@@ -100,8 +100,9 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         try {
             $controller = $this->controllerBuilder->build($classPath);
             foreach ($controller->routes as $actionName => $route) {
-                $this->routes[] = [$route->method, $route->uri, $classPath, $actionName];
+                $this->routes[] = [$route->method, $route->uri, [$classPath, $actionName]];
             }
+            $this->controllers[] = $classPath;
         } catch (\Throwable $e) {
             $exceptionHandler = $this->get(ExceptionHandlerInterface::class);
             $exceptionHandler->render($e)->send();
@@ -129,8 +130,8 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         // 把解析注解收集的信息，注册成FastRoute路由
         $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) use($app) {
             foreach($app->routes as $route) {
-                list($method, $uri, $classPath, $actionName) = $route;
-                $r->addRoute($method, $uri, [$classPath, $actionName]);
+                list($method, $uri, $callable) = $route;
+                $r->addRoute($method, $uri, $callable);
             }
         });
         
@@ -143,12 +144,18 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
                     if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
                         $request->attributes->add($routeInfo[2]);
                     }
-                    list($classPath, $actionName) = $routeInfo[1];
-    
-                    $controller = $app->controllerBuilder->build($classPath);
-                    $routeInstance = $controller->getRoute($actionName);
-                    $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
-                    return $routeInstance->invoke($app, $request, $classPath, $actionName);
+                    
+                    if ($routeInfo[1] instanceof \Closure) { // 手动注册的闭包路由
+                        return $routeInfo[1]($app, $request);
+                    } elseif (is_array($routeInfo[1])) {
+                        list($classPath, $actionName) = $routeInfo[1];
+                        $controller = $app->controllerBuilder->build($classPath);
+                        $routeInstance = $controller->getRoute($actionName);
+                        $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
+                        return $routeInstance->invoke($app, $request, $classPath, $actionName);
+                    } else {
+                        throw new BadCodeException("无法解析路由");
+                    }
                 };
 
                 foreach (array_reverse($app->globalHooks) as $hookName){
@@ -227,16 +234,26 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     }
 
     /**
-     * @Inject
-     * @var \PhpRest\Controller\ControllerBuilder
+     * @param string $method
+     * @param string $uri
+     * @param callable $handler function(Application $app, Request $request):Response
      */
-    private $controllerBuilder;
+    public function addRoute($method, $uri, callable $handler)
+    {
+        $this->routes[] = [$method, $uri, $handler];
+    }
 
     /** 
      * @Inject
      * @var \DI\Container 
      * */
     private $container;
+
+    /**
+     * @Inject
+     * @var \PhpRest\Controller\ControllerBuilder
+     */
+    public $controllerBuilder;
 
     /** 
      * 所有路由信息(非 Route 对象)
@@ -245,12 +262,18 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * 
      * @var array 
      * */
-    private $routes = [];
+    public $routes = [];
+
+    /** 
+     * 所有controller类名
+     * @var string 
+     * */
+    public $controllers = [];
 
     /**
      * 全局Hook
      * 
      * @var string[] Hook类全命名空间
      */
-    private $globalHooks = [];
+    public $globalHooks = [];
 }
