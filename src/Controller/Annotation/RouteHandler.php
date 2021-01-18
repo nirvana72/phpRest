@@ -33,7 +33,7 @@ class RouteHandler
         $route = new Route();
         $route->method      = $methodType;
         $route->uri         = $controller->path . $methodUri;
-        $route->summary     = $ann->parent->summary;
+        $route->summary     = $ann->parent->summary?:$actionName;
         $route->description = $ann->parent->description;
         $route->requestHandler  = new RequestHandler();
 
