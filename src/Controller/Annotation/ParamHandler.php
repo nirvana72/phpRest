@@ -21,6 +21,7 @@ class ParamHandler
         $paramMeta = $route->requestHandler->getParamMeta($name);
         $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 注解参数 {$name} 没有被使用"));
         $paramMeta->description = explode('{@', $desc)[0];
+        if (empty($paramMeta->description)) $paramMeta->description = $name;
 
         if ($paramMeta->type[0] === 'Entity') {
             if (empty($type) === false) {
