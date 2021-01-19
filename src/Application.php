@@ -73,7 +73,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @param string $controllerPath controller所在目录
      * @param string $namespace controller所在命名空间
      */
-    public function loadRoutesFromPath($controllerPath, $namespace) 
+    public function scanRoutesFromPath($controllerPath, $namespace) 
     {
         $d = dir($controllerPath);
         while (($entry = $d->read()) !== false){
@@ -82,10 +82,10 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
             if (is_file($path)) {
                 if (substr($entry, -14) === 'Controller.php') {
                     $classPath = $namespace . '\\' . substr($entry, 0, -4);
-                    $this->loadRoutesFromClass($classPath);
+                    $this->scanRoutesFromClass($classPath);
                 }
             } else {
-                $this->loadRoutesFromPath($path, $namespace . '\\' . $entry);
+                $this->scanRoutesFromPath($path, $namespace . '\\' . $entry);
             }
         }
         $d->close();
@@ -96,7 +96,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * 
      * @param string $classPath controller命名空间全路径
      */
-    private function loadRoutesFromClass($classPath) 
+    private function scanRoutesFromClass($classPath) 
     {
         try {
             $controller = $this->controllerBuilder->build($classPath);

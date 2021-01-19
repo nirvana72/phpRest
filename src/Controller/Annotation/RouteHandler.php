@@ -56,8 +56,7 @@ class RouteHandler
         
         $paramSource = in_array($methodType, ['POST', 'PUT']) ? 'request' : 'query';
         // 遍历方法的参数，封装成 ParamMeta 对象, 收集到route->requestHandler里
-        $methodParams = $method->getParameters();
-        foreach ($methodParams as $param) {
+        foreach ($method->getParameters() as $param) {
             $paramName = $param->getName(); // 参数名 不带$
 
             $meta = new ParamMeta();
