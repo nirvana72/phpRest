@@ -57,7 +57,7 @@ class RequestHandler
         // 从 request 中收集所需参数
         foreach ($this->paramMetas as $_ => $meta) {
             // 直接绑定Request
-            if ($meta->type[0] === 'request') {
+            if ($meta->type[0] === 'Request') {
                 $inputs[$meta->name] = $request;
                 continue;
             }

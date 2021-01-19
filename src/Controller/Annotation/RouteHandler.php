@@ -72,7 +72,7 @@ class RouteHandler
             if($paramClass){ // 如果参数是个Class,否则(基础数据类型)这里是null
                 $meta->type = ['Entity', $paramClass->getName()];
                 if ($meta->type[1] === 'Symfony\Component\HttpFoundation\Request') {
-                    $meta->type = ['request', ''];
+                    $meta->type = ['Request', ''];
                 }
             }
 
