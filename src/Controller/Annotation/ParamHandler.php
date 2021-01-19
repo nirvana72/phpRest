@@ -34,29 +34,22 @@ class ParamHandler
             // function 中没有指定参数类型，判断 @param 中指定是否为实体类
             // 带 \ 命名空间 或首字母大写， 认为是实体类
             if (strpos($type, '\\') !== false || preg_match("/^[A-Z]{1}$/", $type[0])) {
-                $realType = 'Entity';
-                if (substr($type, -2) === '[]') {
-                    $type = substr($type, 0, -2);  
-                    $realType = 'Entity[]';                  
+                $entityClassPath = $type;
+                $type = 'Entity';
+                if (substr($entityClassPath, -2) === '[]') {
+                    $entityClassPath = substr($entityClassPath, 0, -2);  
+                    $type = 'Entity[]';                  
                 }
-                if (strpos($type, '\\') === false) {
+                if (strpos($entityClassPath, '\\') === false) {
                     // 如果没写全命名空间，需要通过反射取得全命名空间
-                    $type = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($controller->classPath, $type);
+                    $entityClassPath = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($controller->classPath, $entityClassPath);
                 }
-                class_exists($type) or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} @param {$name} 指定的实体类 {$type} 不存在"));
-                $paramMeta->type = [$realType, $type];
+                class_exists($entityClassPath) or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} @param {$name} 指定的实体类 {$entityClassPath} 不存在"));
+                $paramMeta->type = [$type, $entityClassPath];
             } else {
                 // 否则作为基础类型处理
-                $isArray = false;
-                if (substr($type, -2) === '[]') {
-                    $type = substr($type, 0, -2);
-                    $isArray = true;
-                }
-                $cast = \PhpRest\Validator\Validator::typeCast($type);
-                list($realType, $validation, $desc) = $cast;
-                if ($isArray === true) $realType .= '[]'; 
-                $paramMeta->validation = $validation;
-                $paramMeta->type = [$realType, $desc];
+                $paramMeta->type = [$type, ''];
+                $paramMeta->validation = \PhpRest\Validator\Validator::ruleCast($type);
             }
         }
     }

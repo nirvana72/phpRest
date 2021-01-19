@@ -14,7 +14,7 @@ class ParamMeta
     public $name;
 
     /**
-     * 参数类型[类型，默认值描述]
+     * 参数类型[类型，实体类命名空间]
      * @var string[]
      */
     public $type = ['string', ''];

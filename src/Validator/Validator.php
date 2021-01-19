@@ -38,45 +38,28 @@ class Validator extends \Valitron\Validator
     }
 
     /**
-     * 转化框架支持的参数类型为基础类型
-     * 
      * @param string $type
-     * @return [基础类型，验证规则，默认描述]
+     * @return 验证规则
      */
-    public static function typeCast($type) {
-        if(empty($type) || $type === 'mixed') {
-            return ['mixed', '', 'any'];
+    public static function ruleCast($type) {
+        if(empty($type)) {
+            return '';
         }
-        elseif($type === 'string') {
-            return ['string', '', 'string'];
+        if(substr($type, -2) === '[]') {
+            $type = substr($type, 0, -2);
         }
-        elseif(in_array($type, ['int', 'integer'])) {
-            return ['integer', 'integer', 1];
+        if($type === 'int') {
+            return 'integer';
         }
         elseif($type === 'dateTime') {
-            return ['string', 'dateFormat=Y-m-d H:i:s', 'yyyy-mm-dd HH:mm:ss'];
-        }
-        elseif($type === 'date') {
-            return ['string', 'date', 'yyyy-mm-dd'];
+            return 'dateFormat=Y-m-d H:i:s';
         }
         elseif($type === 'time') {
-            return ['string', 'dateFormat=H:i:s', 'HH:mm:ss'];
+            return 'dateFormat=H:i:s';
         }
-        elseif($type === 'numeric') {
-            return ['number', 'numeric', 1.1];
+        elseif(in_array($type, ['integer', 'date', 'numeric', 'slug', 'alpha', 'alphaNum', 'email', 'url', 'ip'])) {
+            return $type;
         }
-        elseif($type === 'slug') {
-            return ['string', 'slug', '只能包括英文字母(a-z)、数字(0-9)、破折号和下划线'];
-        }
-        elseif($type === 'alpha') {
-            return ['string', 'alpha', '只能包括英文字母(a-z)'];
-        }
-        elseif($type === 'alphaNum') {
-            return ['string', 'alphaNum', '只能包括英文字母(a-z)和数字(0-9)'];
-        }
-        elseif(in_array($type, ['email', 'url', 'ip'])) {
-            return ['string', $type, $type];
-        }
-        return [$type, '', 'unknow'];
+        return '';
     }
 }

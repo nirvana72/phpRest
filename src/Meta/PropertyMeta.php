@@ -26,10 +26,10 @@ class PropertyMeta
     public $description;
 
     /**
-     * 参数类型[类型，默认值描述]
+     * 参数类型[类型，实体类命名空间]
      * @var string[]
      */
-    public $type = ['mixed', 'any'];
+    public $type = ['string', ''];
 
     /**
      * 验证规则

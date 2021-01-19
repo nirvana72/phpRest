@@ -21,28 +21,21 @@ class VarHandler
         // 判断实体类属性是否嵌套实体类
         $type = $ann->description;
         if (strpos($type, '\\') !== false || preg_match("/^[A-Z]{1}$/", $type[0])) {
-            $realType = 'Entity';
-            if (substr($type, -2) === '[]') {
-                $type = substr($type, 0, -2);
-                $realType = 'Entity[]';
+            $entityClassPath = $type;
+            $type = 'Entity';
+            if (substr($entityClassPath, -2) === '[]') {
+                $entityClassPath = substr($entityClassPath, 0, -2);
+                $type = 'Entity[]';
             }
-            if (strpos($type, '\\') === false) {
+            if (strpos($entityClassPath, '\\') === false) {
                 // 如果没写全命名空间，需要通过反射取得全命名空间
-                $type = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($entity->classPath, $type);
+                $entityClassPath = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($entity->classPath, $entityClassPath);
             }
-            class_exists($type) or \PhpRest\abort(new BadCodeException("{$entity->classPath} 属性 {$ann->name} 指定的实体类 {$type} 不存在"));
-            $property->type = [$realType, $type];
+            class_exists($entityClassPath) or \PhpRest\abort(new BadCodeException("{$entity->classPath} 属性 {$ann->name} 指定的实体类 {$entityClassPath} 不存在"));
+            $property->type = [$type, $entityClassPath];
         } else {
-            $isArray = false;
-            if (substr($type, -2) === '[]') {
-                $type = substr($type, 0, -2);
-                $isArray = true;
-            }
-            $cast = \PhpRest\Validator\Validator::typeCast($type);
-            list($realType, $validation, $desc) = $cast;
-            if ($isArray === true) $realType .= '[]'; 
-            $property->validation = $validation;
-            $property->type = [$realType, $desc];
+            $property->type = [$type, ''];
+            $property->validation = \PhpRest\Validator\Validator::ruleCast($type);
         }
     }
 }
