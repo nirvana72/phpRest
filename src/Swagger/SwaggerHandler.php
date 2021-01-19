@@ -2,6 +2,7 @@
 namespace PhpRest\Swagger;
 
 use Symfony\Component\HttpFoundation\Response;
+use PhpRest\Entity\EntityBuilder;
 
 class SwaggerHandler
 {
@@ -17,7 +18,8 @@ class SwaggerHandler
         }
     }   
 
-    public function build($app, $namesapce, $key) {
+    public function build($app, $namesapce, $key) 
+    {
         $this->swagger = [];
         $this->swagger['swagger'] = '2.0';
         $this->swagger['info'] = $this->makeInfo($key);
@@ -26,35 +28,35 @@ class SwaggerHandler
         $this->swagger['tags'] = [];
         $this->swagger['schemes'] = ['https', 'http'];
         $this->swagger['paths'] = [];
+        
+        $this->makeDefaultResponseDefinition();
 
         foreach($app->controllers as $classPath) {
             if (0 !== strpos($classPath, $namesapce)) { continue; }
 
             $controller = $app->controllerBuilder->build($classPath);
-            $modifyTime = date("Y-m-d H:i:s", $controller->modifyTimespan);
 
-            // 多个controller 可以写同名tag, 则会排版到同一个tag下
-            if ($this->isTagExist($controller->summary) === false) {
-                $tag = [];
-                $tag['name'] = $controller->summary;
-                $tag['description'] = $controller->description;
-                $this->swagger['tags'][] = $tag;
-            }
-
+            $this->addTag($controller->summary, $controller->description);
+            
             foreach($controller->routes as $action => $route) {
-                $path = $this->makePath($controller, $route);
+                $path = $this->makePath($app, $controller, $route);
                 $method = strtolower($route->method);
                 $this->swagger['paths'][$route->uri][$method] = $path;
             }
         }
 
-        // paths 必须是非空对象, 以下代码解决空路由时swagger解析报错问题
+        // swagger有些对象如果存在，必须是非空对象, 以下代码解决swagger解析报错问题
         if (count($this->swagger['paths']) === 0) {
             $this->swagger['paths'] = new \stdClass();
         }
+        if (count($this->swagger['definitions']) === 0) {
+            $this->swagger['definitions'] = new \stdClass();
+        }
     }
 
-    private function makeInfo($key) {
+    // 基本信息
+    private function makeInfo($key) 
+    {
         $info = [];
         $info['title'] = "{$this->appName} - {$key} - {$this->appEnv}";
         $info['description'] = '这个不应该配置，应该根据group自己定义';
@@ -69,7 +71,23 @@ class SwaggerHandler
         return $info;
     }
 
-    private function makePath($controller, $route) {
+    // 创建默认的成功返回引用
+    private function makeDefaultResponseDefinition() 
+    {
+        $this->swagger['definitions'] = [];
+        $schema = [
+            'type' => 'object',
+            'properties' => [
+                'ret' => ['type' => 'integer', 'default' => 1],
+                'msg' => ['type' => 'string',  'default' => 'success']
+            ]
+        ];
+        $this->swagger['definitions']['Response200'] = $schema;
+    }
+
+    // 循环调用，创建API
+    private function makePath($app, $controller, $route) 
+    {
         $modifyTime = date("Y-m-d H:i:s", $controller->modifyTimespan);
 
         $path = [];
@@ -90,25 +108,53 @@ class SwaggerHandler
 
         foreach($route->requestHandler->paramMetas as $pName => $param) {
             
-            $in = $this->castParamSource($param->source);
+            $in = $this->sourceCast($param->source);
             if ($in === 'body') {
                 // 所有body需要参数合并成一个对象
                 $schema = [];
-                $schema['type'] = $this->typeCast($param->type[0]);
-                $schema['description'] = $param->description . ($param->validation? " [{$param->validation}]" : '');
-                if ($schema['type'] === 'array') {
-                    $subType = $this->typeCast(substr($param->type[0], 0, -2));
-                    $default = $this->defaultCast($subType);
-                    $schema['items'] = ['type' => $subType, 'default' => $default];
-                } else {
-                    $schema['default'] = $this->defaultCast($schema['type'], $param->default, $param->validation);
+                if ($param->type[0] === 'Entity[]') {
+                    $schema['type'] = 'array';
+                    $schema['items'] = $this->makeDefinition($app, $param->type[1]);
+                }
+                elseif ($param->type[0] === 'Entity') {
+                    $schema = $this->makeDefinition($app, $param->type[1]);
+                }
+                else {
+                    $schema['description'] = $param->description . ($param->validation? " [{$param->validation}]" : '');
+                    $schema['type'] = $this->typeCast($param->type[0]);
+                    if ($schema['type'] === 'array') {
+                        $subType = $this->typeCast(substr($param->type[0], 0, -2));
+                        $default = $this->defaultCast($subType, null, $param->validation);
+                        $schema['items'] = ['type' => $subType, 'default' => $default];
+                    } else {
+                        $schema['default'] = $this->defaultCast($schema['type'], $param->default, $param->validation);
+                    }
                 }
                 $bodyParameter['schema']['properties'][$pName] = $schema;
-            } else {
+            }
+            elseif ($in === 'files') {
+                $path['consumes'] = ['multipart/form-data'];
+                $parameter = [];
+                $parameter['name'] = $pName;
+                $parameter['in'] = 'formData';
+                $parameter['type'] = 'file';
+                $parameter['description'] = $param->description;
+                $parameter['required'] = ! $param->isOptional;
+                $path['parameters'][] = $parameter;
+            } 
+            else {
                 $parameter = [];
                 $parameter['name'] = $pName;
                 $parameter['in'] = $in;
                 $parameter['type'] = $this->typeCast($param->type[0]);
+                if ($parameter['type'] === 'Entity') {
+                    $parameter['type'] = 'string'; // GET 方式提交实体类数据，swagger没法处理
+                }
+                if ($parameter['type'] === 'array') {
+                    $subType = $this->typeCast(substr($param->type[0], 0, -2));
+                    $default = $this->defaultCast($subType);
+                    $parameter['items'] = ['type' => $subType, 'default' => $default];
+                }
                 $parameter['required'] = ! $param->isOptional;
                 if ($param->default !== null) {
                     $parameter['default'] = $param->default;
@@ -127,42 +173,76 @@ class SwaggerHandler
         return $path;
     }
 
-    private function makeResponse() {
+    private function makeResponse() 
+    {
         $responses = [];
-        $responses['200'] = [];
-        $responses['200']['description'] = 'successful operation';
-        $responses['200']['schema'] = [];
-        // $responses['200']['type'] = 'object';
-        // $responses['200']['properties'] = [];
-
-        $schema = [];
-        $schema['type'] = 'integer';
-        $schema['default'] = 1;
-        $schema['description'] = '';
-        $responses['200']['schema']['properties']['ret'] = $schema;
-
-        $schema2 = [];
-        $schema2['type'] = 'string';
-        $schema2['default'] = 'success';
-        $schema2['description'] = '成功';
-        $responses['200']['schema']['properties']['msg'] = $schema2;
+        $responses['200']['description'] = '成功返回';
+        $responses['200']['schema'] = ['$ref' => "#/definitions/Response200"];
         return $responses;
     }
 
-    public function toJson() {
+    public function toJson() 
+    {
         return json_encode($this->swagger, true);
     }
 
-    private function isTagExist($tagName) {
+    
+    // 多个controller 可以写同名tag, 则会排版到同一个tag下
+    private function addTag($name, $desc) 
+    {
         foreach($this->swagger['tags'] as $tag) {
-            if ($tag['name'] === $tagName) {
-                return true;
+            if ($tag['name'] === $name) {
+                return;
             }
         }
-        return false;
+        $this->swagger['tags'][] = ['name' => $name, 'description' => $desc];
     }
 
-    private function castParamSource($source) {
+    // 如果是实体类， 创建引用
+    private function makeDefinition($app, $entityClassPath) 
+    {
+        $defName = str_replace('\\', '', $entityClassPath);        
+        foreach ($this->swagger['definitions'] as $key => $_) {
+            if ($key === $entityClassPath) {
+                return ['$ref' => "#/definitions/{$defName}"];
+            }
+        }
+
+        $entityObj['type'] = 'object';
+        $entityObj['properties'] = [];
+
+        $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
+        foreach($entity->properties as $property) {
+            if ($property->type[0] === 'Entity[]') {
+                $itemObj['type'] = 'array';
+                $itemObj['items'] = $this->makeDefinition($app, $property->type[1]);
+                $entityObj['properties'][$property->name] = $itemObj;
+            }
+            elseif ($property->type[0] === 'Entity') {
+                $entityObj['properties'][$property->name] = $this->makeDefinition($app, $property->type[1]);
+            }
+            else {
+                $type = $this->typeCast($property->type[0]);
+                $default = null;
+                if ($type === 'array') {
+                    $type = $this->typeCast(substr($property->type[0], 0, -2));
+                    $default = $this->defaultCast($type);
+                    $itemObj['type'] = 'array';
+                    $itemObj['items'] = ['type' => $type, 'default' => $default];
+                    $entityObj['properties'][$property->name] = $itemObj;
+                } else {
+                    $default = $this->defaultCast($type, null, $property->validation);
+                    $entityObj['properties'][$property->name] = ['type' => $type, 'default' => $default ];
+                }
+            }
+        }
+        $this->swagger['definitions'][$defName] = $entityObj;
+        return ['$ref' => "#/definitions/{$defName}"];
+    }
+
+    // 把框架中request中的取值位置， 转换成swagger支持的类型
+    private function sourceCast($source) 
+    {
         $ary = explode('.', $source);
         if ($ary[0] === 'request') return 'body';
         if ($ary[0] === 'query') return 'query';
@@ -171,7 +251,9 @@ class SwaggerHandler
         return $ary[0];
     }
 
-    private function typeCast($type) {
+    // 把框架的参数类型，转成swagger支持的类型
+    private function typeCast($type) 
+    {
         if(substr($type, -2) === '[]') {
             return 'array';
         } elseif(in_array($type, ['int', 'integer'])) {
@@ -180,11 +262,15 @@ class SwaggerHandler
             return 'number';
         } elseif($type === 'bool') {
             return 'boolean';
+        } elseif($type === 'Entity') {
+            return 'Entity';
         }
         return 'string';
     }
 
-    private function defaultCast($type, $default = null, $validation = null) {
+    // 各种类型的默认显示值
+    private function defaultCast($type, $default = null, $validation = null) 
+    {
         if ($default !== null) { return $default; }
         if ($type === 'string' && $validation){
             return "string [{$validation}]";

@@ -24,7 +24,8 @@ use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Cache\ApcuCache;
 use Doctrine\Common\Cache\FilesystemCache;
 // TODO command
-// TODO swagger
+// TODO 文件上传
+// TODO swgger 返回值
 class Application implements ContainerInterface, FactoryInterface, InvokerInterface
 {
     /**
