@@ -137,15 +137,24 @@ class ControllerBuilder
                 if ($desc === '') $desc = $varName;
                 $annTag->description = [ $type, $varName, $desc ];
                 if (strpos($desc, '{@') !== false) {
-                    $output = new AnnotationTagsOutput();
-                    $tag->getDescription()->render($output);
-                    
-                    foreach ($output->tags as $child) {
+                    if (strpos($desc, '{@rule') === 0 && strpos($desc, 'regex') !== false) {
+                        // {@rule regex=/^[a-zA-Z0-9]{5,10}$/} 当使用正则表达试时，大括号与注解冲突
+                        // 没别的好办法，只能特殊处理, 用{@rule regex= 时只能单独使用
                         $childTag = new AnnotationTag();
                         $childTag->parent = $annTag;
-                        $childTag->name = $child->getName();
-                        $childTag->description = $child->getDescription()->render();
+                        $childTag->name = 'rule';
+                        $childTag->description = substr($desc, 7, -1);
                         $annTag->children[] = $childTag;
+                    } else {
+                        $output = new AnnotationTagsOutput();
+                        $tag->getDescription()->render($output);
+                        foreach ($output->tags as $child) {
+                            $childTag = new AnnotationTag();
+                            $childTag->parent = $annTag;
+                            $childTag->name = $child->getName();
+                            $childTag->description = $child->getDescription()->render();
+                            $annTag->children[] = $childTag;
+                        }
                     }
                 }
             } 
