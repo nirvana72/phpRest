@@ -271,7 +271,7 @@ class SwaggerHandler
 
     public function toJson() 
     {
-        return json_encode($this->swagger, true);
+        return json_encode($this->swagger, JSON_UNESCAPED_UNICODE);
     }
 
     

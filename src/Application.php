@@ -138,7 +138,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
         try {
             $next = function($request) use ($app, $routeInfo) {
-                if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {
+                if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {                    
                     if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
                         $request->attributes->add($routeInfo[2]);
                     }
