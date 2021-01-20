@@ -136,9 +136,10 @@ class ControllerBuilder
                 $type     = ltrim($type, '\\'); // phpDocumentor 不可识别的类型会认为是类，在前面加 \
                 if ($desc === '') $desc = $varName;
                 $annTag->description = [ $type, $varName, $desc ];
-                if (strpos($varName, '{@') !== false) {
+                if (strpos($desc, '{@') !== false) {
                     $output = new AnnotationTagsOutput();
                     $tag->getDescription()->render($output);
+                    
                     foreach ($output->tags as $child) {
                         $childTag = new AnnotationTag();
                         $childTag->parent = $annTag;

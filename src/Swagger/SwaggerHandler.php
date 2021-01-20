@@ -27,7 +27,6 @@ class SwaggerHandler
         $this->swagger['host'] = $this->appHost;
         $this->swagger['schemes'] = $this->config['schemes'];
         $this->swagger['tags'] = [];
-        $this->swagger['schemes'] = ['https', 'http'];
         $this->swagger['paths'] = [];
         
         $this->makeDefaultResponseDefinition();
@@ -381,7 +380,7 @@ class SwaggerHandler
 
     /**
      * @Inject("swagger")
-     * @var string
+     * @var array
      */
     private $config;
 

@@ -4,10 +4,10 @@ namespace PhpRest;
 class ApiResult 
 {
     /**
-     * code
+     * ret
      * @var int
      */
-    public $code = 1;
+    public $ret = 1;
 
     /**
      * msg
@@ -17,8 +17,8 @@ class ApiResult
 
     public $data;
 
-    public function __construct($code, $msg) {
-        $this->code = $code;
+    public function __construct($ret, $msg) {
+        $this->ret = $ret;
         $this->msg = $msg;
     }
 
@@ -28,23 +28,15 @@ class ApiResult
         return $result;
     }
 
-    public static function error($msg, $code = -1) {
-        return new ApiResult($code, $msg);
+    public static function error($msg, $ret = -1) {
+        return new ApiResult($ret, $msg);
     }
 
     public static function assert($flag, $msg = []) {
-        $errMsg = '出错了';
-        $sucMsg = 'success';
-        if (is_string($msg)) {
-            $errMsg = $msg;
-        }
-        if (is_array($msg)) {
-            $cnt = count($msg);
-            if ($cnt === 1) { $errMsg = $msgs[0]; }
-            if ($cnt === 2) { $sucMsg = $msgs[0]; $errMsg = $msgs[1]; }
-        }
-        $code = $flag ? 1 : -1;
-        $msg = $flag ? $successMsg : $errMsg;
-        return new ApiResult($code, $msg);
+        $sucMsg = $msgs[0]?:'success';
+        $errMsg = $msgs[1]?:'出错了';
+        $ret = $flag ? 1 : -1;
+        $msg = $flag ? $sucMsg : $errMsg;
+        return new ApiResult($ret, $msg);
     }
 }
