@@ -15,6 +15,7 @@ use PhpRest\Controller\Annotation\RuleHandler;
 use PhpRest\Controller\Annotation\HookHandler;
 use PhpRest\Exception\BadCodeException;
 use phpDocumentor\Reflection\DocBlock\Tags\Param as ParamTag;
+use phpDocumentor\Reflection\DocBlock\Tags\Return_ as ReturnTag;
 use Doctrine\Common\Cache\Cache;
 
 class ControllerBuilder
@@ -127,15 +128,15 @@ class ControllerBuilder
             $annTag = new AnnotationTag();
             $annTag->parent = $annBlock;
             $annTag->name   = $tag->getName();
+
             if ($tag instanceof ParamTag) {
                 $varName  = $tag->getVariableName();
                 $desc     = $tag->getDescription()->render();
                 $type     = (string)$tag->getType();
                 $type     = ltrim($type, '\\'); // phpDocumentor 不可识别的类型会认为是类，在前面加 \
                 if ($desc === '') $desc = $varName;
-
                 $annTag->description = [ $type, $varName, $desc ];
-                if (strpos($annTag->description[2], '{@') !== false) {
+                if (strpos($varName, '{@') !== false) {
                     $output = new AnnotationTagsOutput();
                     $tag->getDescription()->render($output);
                     foreach ($output->tags as $child) {
@@ -146,9 +147,17 @@ class ControllerBuilder
                         $annTag->children[] = $childTag;
                     }
                 }
-            } else {
+            } 
+            elseif ($tag instanceof ReturnTag) {
+                $type = (string)$tag->getType();
+                $type = ltrim($type, '\\');
+                $desc = $tag->getDescription()->render();
+                $annTag->description = [ $type, $desc ];
+            }
+            else {
                 $annTag->description = $tag->getDescription()->render();
             }
+
             $annBlock->children[] = $annTag;
         }
         return $annBlock;

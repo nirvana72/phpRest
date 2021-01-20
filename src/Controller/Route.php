@@ -29,6 +29,12 @@ class Route
     public $description = '';
 
     /**
+     * 返回描述 [类型, json]
+     * @var string[]
+     */
+    public $return = ['void', ''];
+
+    /**
      * @var HookMeta[]
      */
     public $hooks = [];

@@ -12,6 +12,10 @@ class ReturnHandler
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
-        echo "<br><br> ReturnHandler";
+        $target = $ann->parent->name;
+        $route = $controller->getRoute($target);
+        if ($route === false) { return; }
+
+        $route->return = $ann->description;
     }
 }

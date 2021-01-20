@@ -4,6 +4,7 @@ namespace PhpRest\Swagger;
 use Symfony\Component\HttpFoundation\Response;
 use PhpRest\Entity\EntityBuilder;
 use PhpRest\Controller\ControllerBuilder;
+use PhpRest\Exception\BadCodeException;
 
 class SwaggerHandler
 {
@@ -165,19 +166,108 @@ class SwaggerHandler
             $path['parameters'][] = $bodyParameter;
         }
 
-        $path['responses'] = $this->makeResponse();
+        $path['responses']['200'] = $this->makeResponse($app, $controller, $route);
         
         return $path;
     }
 
-    private function makeResponse() 
+    // 生成 Response 描述
+    private function makeResponse($app, $controller, $route) 
     {
-        return [
-            '200' => [
-                'description' => '成功返回',
-                'schema' => ['$ref' => "#/definitions/Response200"]
-            ]
-        ];
+        $returnType = $route->return[0];
+        $isArray = substr($returnType, -2) === '[]';
+        if ($isArray) $returnType = substr($returnType, 0, -2);
+        $isRaw = strpos($returnType, '_') === 0;
+        if ($isRaw) $returnType = substr($returnType, 1);
+
+        $returnSchema = null;
+        if ($returnSchema === 'void') {
+            $returnSchema = ['$ref' => "#/definitions/Response200"];
+        } elseif (strpos($returnType, '\\') !== false || preg_match("/^[A-Z]{1}$/", $returnType)) {
+            // 返回实体类
+            $entityClassPath = $returnType;
+            if (strpos($entityClassPath, '\\') === false) {
+                $entityClassPath = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($controller->classPath, $entityClassPath);
+            }
+            if (!class_exists($entityClassPath)) {
+                throw new BadCodeException("{$controller->classPath}::{$route->summary} @return 指定的实体类 {$entityClassPath} 不存在");
+            }
+            if ($isArray === true) {
+                $returnSchema['type'] = 'array';
+                $returnSchema['items'] = $this->makeDefinition($app, $entityClassPath);
+            } else {
+                $returnSchema = $this->makeDefinition($app, $entityClassPath);
+            }
+        }
+        elseif ($returnType === 'object') {
+            $obj = json_decode($route->return[1]);
+            if ($obj === null) {
+                throw new BadCodeException("{$controller->classPath}::{$route->summary} @return 描述无法格式化为JSON");
+            }
+            $schema['type'] = 'object';
+            $schema['properties'] = $this->makeObjectResponseSchema($obj);
+            if ($isArray === true) {
+                $returnSchema['type'] = 'array';
+                $returnSchema['items'] = $schema;
+            } else {
+                $returnSchema = $schema;
+            }
+        } elseif ($returnType === 'number' || $returnType === 'string') {
+            $schema['type'] = $returnType;
+            $schema['default'] = $returnType === 'number'? 1 : 'string';
+            if ($isArray === true) {
+                $returnSchema['type'] = 'array';
+                $returnSchema['items'] = $schema;
+            } else {
+                $returnSchema = $schema;
+            }
+        }
+        
+        if ($returnSchema === null) {
+            $returnSchema = ['type' =>'string','default' => 'string'];
+        } elseif ($isRaw === false) {
+            $returnSchema = [
+                'type' => 'object',
+                'properties' => [
+                    'ret'  => ['type' => 'integer', 'default' => 1],
+                    'msg'  => ['type' => 'string',  'default' => 'success'],
+                    'data' => $returnSchema
+                ]
+            ];
+        }
+
+        return ['description' => '成功返回', 'schema' => $returnSchema];
+    }
+
+    // @return object 后面的json 转换成 ResponseSchema
+    private function makeObjectResponseSchema($obj) 
+    {
+        $schema = [];
+        foreach($obj as $k => $v) {
+            if (is_array($v)) {
+                $schema[$k]['type'] = 'array';
+                if (is_object($v[0])) {
+                    $schema[$k]['items']['type'] = 'object';
+                    $schema[$k]['items']['properties'] = $this->makeObjectResponseSchema($v[0]);                     
+                } else {
+                    $schema[$k]['items'] = [
+                        'type' => $this->valueCast($v[0]),
+                        'default' => $v[0]
+                    ];
+                }
+            } elseif (is_object($v)) {
+                $schema[$k] = [
+                    'type' => 'object',
+                    'properties' => $this->makeObjectResponseSchema($v)
+                ];
+            } else {
+                $schema[$k] = [
+                    'type' => $this->valueCast($v),
+                    'default' => $v
+                ];
+            }
+        }
+        return $schema;
     }
 
     public function toJson() 
@@ -217,11 +307,11 @@ class SwaggerHandler
                         $type = $this->typeCast(substr($property->type[0], 0, -2));
                         $default = $this->defaultCast($type);
                         $itemObj['type'] = 'array';
-                        $itemObj['items'] = ['type' => $type, 'default' => $default];
+                        $itemObj['items'] = ['type' => $type, 'default' => $default, 'description' => $property->summary];
                         $entityObj['properties'][$property->name] = $itemObj;
                     } else {
                         $default = $this->defaultCast($type, null, $property->validation);
-                        $entityObj['properties'][$property->name] = ['type' => $type, 'default' => $default ];
+                        $entityObj['properties'][$property->name] = ['type' => $type, 'default' => $default, 'description' => $property->summary];
                     }
                 }
             }
@@ -261,6 +351,14 @@ class SwaggerHandler
         if ($type === 'number')  return 1.1; 
         if ($type === 'boolean') return true; 
         return "string";
+    }
+
+    // 识别值是什么类型
+    private function valueCast($val) {
+        if(is_integer($val)) return 'integer';
+        if(is_float($val)) return 'number';
+        if(is_bool($val)) return 'boolen';
+        return 'string';
     }
 
     /**
