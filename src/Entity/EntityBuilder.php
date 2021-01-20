@@ -128,7 +128,7 @@ class EntityBuilder
             $factory = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
             $docBlock = $factory->create($docComment);
             $annBlock->summary     = $docBlock->getSummary();
-            $annBlock->description = $docBlock->getDescription()->render();
+            // $annBlock->description = $docBlock->getDescription()->render(); 属性只要摘要，不需要描述，收集了也没地方展示
             $tags = $docBlock->getTags(); 
             foreach ($tags as $tag) {
                 $annTag = new AnnotationTag();

@@ -20,12 +20,6 @@ class PropertyMeta
     public $summary;
 
     /**
-     * 参数描述
-     * @var string
-     */
-    public $description;
-
-    /**
      * 参数类型[类型，实体类命名空间]
      * @var string[]
      */

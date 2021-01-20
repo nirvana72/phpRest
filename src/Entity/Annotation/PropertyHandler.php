@@ -14,8 +14,6 @@ class PropertyHandler
     {
         $meta = new \PhpRest\Meta\PropertyMeta($ann->name);
         $meta->summary      = $ann->summary?: $ann->name;
-        $meta->description  = $ann->description;
-        
         $entity->properties[$ann->name] = $meta;
     }
 }
