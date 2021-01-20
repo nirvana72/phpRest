@@ -3,6 +3,7 @@ namespace PhpRest\Swagger;
 
 use Symfony\Component\HttpFoundation\Response;
 use PhpRest\Entity\EntityBuilder;
+use PhpRest\Controller\ControllerBuilder;
 
 class SwaggerHandler
 {
@@ -33,7 +34,7 @@ class SwaggerHandler
         foreach($app->controllers as $classPath) {
             if (0 !== strpos($classPath, $namesapce)) { continue; }
 
-            $controller = $app->controllerBuilder->build($classPath);
+            $controller = $app->get(ControllerBuilder::class)->build($classPath);
 
             $this->addTag($controller->summary, $controller->description);
             
@@ -96,7 +97,7 @@ class SwaggerHandler
         // $path['operationId'] = '函数名'; // 这个貌似没什么用
         // $path['security'] = [1]; // 业务上接口是否需要验证在框架层面无法判断. 反正加了个这属性，接口后面会有一个小锁图标
         
-        // 准备好一个body参数体，所有body需要参数合并成一个对象
+        // 准备好一个body参数体，POST提交需要参数合并成一个对象
         $bodyParameter = [
             'in'     => 'body',
             'name'   => 'request',
@@ -189,9 +190,7 @@ class SwaggerHandler
     private function addTag($name, $desc) 
     {
         foreach($this->swagger['tags'] as $tag) {
-            if ($tag['name'] === $name) {
-                return;
-            }
+            if ($tag['name'] === $name) { return; }
         }
         $this->swagger['tags'][] = ['name' => $name, 'description' => $desc];
     }
@@ -245,17 +244,11 @@ class SwaggerHandler
     // 把框架的参数类型，转成swagger支持的类型
     private function typeCast($type) 
     {
-        if(substr($type, -2) === '[]') {
-            return 'array';
-        } elseif(in_array($type, ['int', 'integer'])) {
-            return 'integer';
-        } elseif($type === 'numeric') {
-            return 'number';
-        } elseif($type === 'bool') {
-            return 'boolean';
-        } elseif($type === 'Entity') {
-            return 'Entity';
-        }
+        if(substr($type, -2) === '[]')  return 'array';
+        if(in_array($type, ['int', 'integer'])) return 'integer';
+        if($type === 'numeric') return 'number';
+        if($type === 'bool') return 'boolean';
+        if($type === 'Entity') return 'Entity';
         return 'string';
     }
 
@@ -263,18 +256,10 @@ class SwaggerHandler
     private function defaultCast($type, $default = null, $validation = null) 
     {
         if ($default !== null) { return $default; }
-        if ($type === 'string' && $validation){
-            return "string [{$validation}]";
-        }
-        elseif ($type === 'integer') { 
-            return 1; 
-        }
-        elseif ($type === 'number')  { 
-            return 1.1; 
-        }
-        elseif ($type === 'boolean') { 
-            return true; 
-        }
+        if ($type === 'string' && $validation) return "string [{$validation}]";
+        if ($type === 'integer') return 1; 
+        if ($type === 'number')  return 1.1; 
+        if ($type === 'boolean') return true; 
         return "string";
     }
 

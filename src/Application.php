@@ -12,6 +12,7 @@ namespace PhpRest;
 use Psr\Container\ContainerInterface;
 use DI\FactoryInterface;
 use Invoker\InvokerInterface;
+use PhpRest\Controller\ControllerBuilder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use PhpRest\Exception\ExceptionHandlerInterface;
@@ -61,7 +62,6 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         $builder->useAutowiring(false);
         $builder->useAnnotations(true);
         $container = $builder->build();
-
         return $container->get(self::class);
     }
 
@@ -99,7 +99,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     private function scanRoutesFromClass($classPath) 
     {
         try {
-            $controller = $this->controllerBuilder->build($classPath);
+            $controller = $this->get(ControllerBuilder::class)->build($classPath);
             foreach ($controller->routes as $actionName => $route) {
                 $this->routes[] = [$route->method, $route->uri, [$classPath, $actionName]];
             }
@@ -150,7 +150,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
                         return $routeInfo[1]($app, $request);
                     } elseif (is_array($routeInfo[1])) {
                         list($classPath, $actionName) = $routeInfo[1];
-                        $controller = $app->controllerBuilder->build($classPath);
+                        $controller = $app->get(ControllerBuilder::class)->build($classPath);
                         $routeInstance = $controller->getRoute($actionName);
                         $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
                         return $routeInstance->invoke($app, $request, $classPath, $actionName);
@@ -249,12 +249,6 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @var \DI\Container 
      * */
     private $container;
-
-    /**
-     * @Inject
-     * @var \PhpRest\Controller\ControllerBuilder
-     */
-    public $controllerBuilder;
 
     /** 
      * 所有路由信息(非 Route 对象)
