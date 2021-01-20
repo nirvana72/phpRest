@@ -24,9 +24,7 @@ use PhpRest\Render\ResponseRender;
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Cache\ApcuCache;
 use Doctrine\Common\Cache\FilesystemCache;
-// TODO command
-// TODO 文件上传
-// TODO swgger 返回值
+
 class Application implements ContainerInterface, FactoryInterface, InvokerInterface
 {
     /**
@@ -139,13 +137,11 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         // FastRoute匹配当前路由
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
         try {
-            if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {                
-                
-                $next = function($request) use ($app, $routeInfo) {
+            $next = function($request) use ($app, $routeInfo) {
+                if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {
                     if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
                         $request->attributes->add($routeInfo[2]);
                     }
-                    
                     if ($routeInfo[1] instanceof \Closure) { // 手动注册的闭包路由
                         return $routeInfo[1]($app, $request);
                     } elseif (is_array($routeInfo[1])) {
@@ -157,24 +153,23 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
                     } else {
                         throw new BadCodeException("无法解析路由");
                     }
-                };
-
-                foreach (array_reverse($app->globalHooks) as $hookName){
-                    $next = function($request)use($app, $hookName, $next){
-                        return $app->get($hookName)->handle($request, $next);
-                    };
+                } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
+                    throw new BadRequestException("{$uri} 访问地址不存在");
+                } elseif ($routeInfo[0] == \FastRoute\Dispatcher::METHOD_NOT_ALLOWED) {
+                    throw new BadRequestException("{$uri} 不支持 {$httpMethod} 请求");
+                } else {
+                    throw new BadRequestException("unknown dispatch return {$routeInfo[0]}");
                 }
+            };
 
-                $response = $next($request);
-                $response->send();
-
-            } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
-                throw new BadRequestException("{$uri} 访问地址不存在");
-            } elseif ($routeInfo[0] == \FastRoute\Dispatcher::METHOD_NOT_ALLOWED) {
-                throw new BadRequestException("{$uri} 不支持 {$httpMethod} 请求");
-            } else {
-                throw new BadRequestException("unknown dispatch return {$routeInfo[0]}");
+            foreach (array_reverse($app->globalHooks) as $hookName){
+                $next = function($request)use($app, $hookName, $next){
+                    return $app->get($hookName)->handle($request, $next);
+                };
             }
+
+            $response = $next($request);
+            $response->send();
         } catch (\Throwable $e) {
             $exceptionHandler = $app->get(ExceptionHandlerInterface::class);
             $exceptionHandler->render($e)->send();
