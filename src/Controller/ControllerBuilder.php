@@ -4,14 +4,11 @@ namespace PhpRest\Controller;
 use PhpRest\Annotation\AnnotationReader;
 use PhpRest\Annotation\AnnotationBlock;
 use PhpRest\Annotation\AnnotationTag;
-use PhpRest\Annotation\AnnotationTagsOutput;
 use PhpRest\Controller\Annotation\ClassHandler;
 use PhpRest\Controller\Annotation\PathHandler;
 use PhpRest\Controller\Annotation\RouteHandler;
 use PhpRest\Controller\Annotation\ParamHandler;
 use PhpRest\Controller\Annotation\ReturnHandler;
-use PhpRest\Controller\Annotation\BindHandler;
-use PhpRest\Controller\Annotation\RuleHandler;
 use PhpRest\Controller\Annotation\HookHandler;
 use PhpRest\Exception\BadCodeException;
 use phpDocumentor\Reflection\DocBlock\Tags\Param as ParamTag;
@@ -33,8 +30,6 @@ class ControllerBuilder
         [RouteHandler::class,     "methods.*.children[?name=='route'][]"],
         [HookHandler::class,      "methods.*.children[?name=='hook'][]"],
         [ParamHandler::class,     "methods.*.children[?name=='param'][]"],
-        [BindHandler::class,      "methods.*.children[].children[?name=='bind'][]"],
-        [RuleHandler::class,      "methods.*.children[].children[?name=='rule'][]"],
         [ReturnHandler::class,    "methods.*.children[?name=='return'][]"]
     ];
 
@@ -136,27 +131,6 @@ class ControllerBuilder
                 $type     = ltrim($type, '\\'); // phpDocumentor 不可识别的类型会认为是类，在前面加 \
                 if ($desc === '') $desc = $varName;
                 $annTag->description = [ $type, $varName, $desc ];
-                if (strpos($desc, '{@') !== false) {
-                    if (strpos($desc, '{@rule') === 0 && strpos($desc, 'regex') !== false) {
-                        // {@rule regex=/^[a-zA-Z0-9]{5,10}$/} 当使用正则表达试时，大括号与注解冲突
-                        // 没别的好办法，只能特殊处理, 用{@rule regex= 时只能单独使用
-                        $childTag = new AnnotationTag();
-                        $childTag->parent = $annTag;
-                        $childTag->name = 'rule';
-                        $childTag->description = substr($desc, 7, -1);
-                        $annTag->children[] = $childTag;
-                    } else {
-                        $output = new AnnotationTagsOutput();
-                        $tag->getDescription()->render($output);
-                        foreach ($output->tags as $child) {
-                            $childTag = new AnnotationTag();
-                            $childTag->parent = $annTag;
-                            $childTag->name = $child->getName();
-                            $childTag->description = $child->getDescription()->render();
-                            $annTag->children[] = $childTag;
-                        }
-                    }
-                }
             } 
             elseif ($tag instanceof ReturnTag) {
                 $type = (string)$tag->getType();

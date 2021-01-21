@@ -16,42 +16,85 @@ class ParamHandler
         $target = $ann->parent->name;
         $route = $controller->getRoute($target);
         if ($route === false) { return; }
-        list($type, $name, $desc) = $ann->description;
+        list($paramType, $paramName, $paramDesc) = $ann->description;
 
-        $paramMeta = $route->requestHandler->getParamMeta($name);
-        $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 注解参数 {$name} 没有被使用"));
-        $paramMeta->description = explode('{@', $desc)[0];
-        if (empty($paramMeta->description)) $paramMeta->description = $name;
+        $paramMeta = $route->requestHandler->getParamMeta($paramName);
+        $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 注解参数 {$paramName} 没有被使用"));
 
         if ($paramMeta->type[0] === 'Entity') {
-            if (empty($type) === false) {
+            if (empty($paramType) === false) {
                 // 绑定实体类参数，@param 可以不写类型，默认按参数描述指定
                 // 但是 @param 如果写了类型，就需要验证类型一至
-                $paramTypeInMethodName = strpos($type, '\\') !== false ? $paramMeta->type[1] : end(explode('\\', $paramMeta->type[1]));
-                $type === $paramTypeInMethodName or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 实体类参数 {$name} 与@param描述不一至"));
+                $paramTypeInMethodName = strpos($paramType, '\\') !== false ? $paramMeta->type[1] : end(explode('\\', $paramMeta->type[1]));
+                $paramType === $paramTypeInMethodName or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 实体类参数 {$paramName} 与@param描述不一至"));
             }
         }
         else {
             // function 中没有指定参数类型，判断 @param 中指定是否为实体类
             // 带 \ 命名空间 或首字母大写， 认为是实体类
-            if (strpos($type, '\\') !== false || preg_match("/^[A-Z]{1}$/", $type[0])) {
-                $entityClassPath = $type;
-                $type = 'Entity';
+            if (strpos($paramType, '\\') !== false || preg_match("/^[A-Z]{1}$/", $paramType[0])) {
+                $entityClassPath = $paramType;
+                $paramType = 'Entity';
                 if (substr($entityClassPath, -2) === '[]') {
                     $entityClassPath = substr($entityClassPath, 0, -2);  
-                    $type = 'Entity[]';                  
+                    $paramType = 'Entity[]';                  
                 }
                 if (strpos($entityClassPath, '\\') === false) {
                     // 如果没写全命名空间，需要通过反射取得全命名空间
                     $entityClassPath = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($controller->classPath, $entityClassPath);
                 }
-                class_exists($entityClassPath) or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} @param {$name} 指定的实体类 {$entityClassPath} 不存在"));
-                $paramMeta->type = [$type, $entityClassPath];
+                class_exists($entityClassPath) or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} @param {$paramName} 指定的实体类 {$entityClassPath} 不存在"));
+                $paramMeta->type = [$paramType, $entityClassPath];
             } else {
                 // 否则作为基础类型处理
-                $paramMeta->type = [$type, ''];
-                $paramMeta->validation = \PhpRest\Validator\Validator::ruleCast($type);
+                $paramMeta->type = [$paramType, ''];
+                $paramMeta->validation = \PhpRest\Validator\Validator::ruleCast($paramType);
             }
         }
+
+        list($ret, $tagContent, $paramDesc) = $this->loadInlineTag('bind', $paramDesc);
+        $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 参数验证描述 bind 格式不正确"));
+        if ($ret === 1) {
+            $paramMeta->source = $tagContent;
+        }
+
+        list($ret, $tagContent, $paramDesc) = $this->loadInlineTag('rule', $paramDesc);
+        $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 参数验证描述 rule 格式不正确"));
+        if ($ret === 1) {
+            $paramMeta->validation .= '|' . $tagContent;
+            $paramMeta->validation = ltrim($paramMeta->validation, '|');
+        }
+
+        $paramMeta->description = trim($paramDesc);
+        if (empty($paramMeta->description)) $paramMeta->description = $paramName;
+    }
+
+    // $desc = 'p1 {@bind request.user} {@rule regax=/^[a-z]{5,10}$/}';
+    private function loadInlineTag($tagName, $desc) {
+        $tag = '';
+        $tagName = '{@' . $tagName;
+        $stIndex = strpos($desc, $tagName);
+        if ($stIndex !== false) {
+            $len = strlen($desc);
+            $enIndex = $stIndex + 1;
+            $braceNum = 1;
+            while ($braceNum > 0 && $enIndex < $len) {
+                $char = $desc[$enIndex];
+                if ($char === '{') $braceNum++;
+                if ($char === '}') $braceNum--;
+                $enIndex++;
+            }
+            if ($braceNum === 0) {
+                $tag = substr($desc, $stIndex, ($enIndex - $stIndex));
+            } else {
+                return [-1, null, $desc];
+            }
+        }
+        if ($tag != '') {
+            $desc = str_replace($tag, '', $desc);
+            $tag = trim(substr($tag, strlen($tagName), -1));
+            return [1, $tag, $desc];
+        }
+        return [0, null, $desc];
     }
 }
