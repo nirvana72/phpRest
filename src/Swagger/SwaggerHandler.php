@@ -8,13 +8,16 @@ use PhpRest\Exception\BadCodeException;
 
 class SwaggerHandler
 {
-    public static function register($app, $namesapces, $callback) 
+    public static function register($app, $namesapces, $callback = null) 
     {
+        if (is_string($namesapces)) $namesapces = [ 'api' => $namesapces ];
         foreach($namesapces as $key => $namesapce) {
             $app->addRoute('GET', "/swagger/{$key}.json", function ($app, $request) use($callback, $namesapce, $key){
                 $swaggerHandler = $app->get(SwaggerHandler::class);
                 $swaggerHandler->build($app, $namesapce, $key);
-                $callback($swaggerHandler->swagger, $key);
+                if ($callback) {
+                    $callback($swaggerHandler->swagger, $key);
+                }
                 return new Response($swaggerHandler->toJson());
             });
         }
@@ -52,9 +55,11 @@ class SwaggerHandler
     // 基本信息
     private function makeInfo($key) 
     {
+        $title = "{$this->appName} - {$this->appEnv}";
+        if ($key !== 'api') $title = "{$this->appName} - {$key} - {$this->appEnv}";
         return [
-            'title'       => "{$this->appName} - {$key} - {$this->appEnv}",
-            'description' => '这个不应该配置，应该根据group自己定义',
+            'title'       => $title,
+            'description' => '',
             'version'     => $this->config['version'],
             'termsOfService' => 'http://swagger.io/terms/',
             'contact' => [
