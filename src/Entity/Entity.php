@@ -84,7 +84,7 @@ class Entity
      */
     public function makeInstanceWithData($app, $data, $withValidator = true, &$obj = null) {
         // 实例化为一个实体类的对象，必需是一个关联数组
-        \PhpRest\isAssocArray($data) or \PhpRest\abort(new BadArgumentException("请求参数不是一个对象结构, 不能实例化成一个实体类"));
+        \PhpRest\isAssocArray($data) or \PhpRest\abort(new BadArgumentException("数据源不是一个对象结构, 不能实例化成一个实体类"));
         if ($obj === null) $obj = $app->make($this->classPath);
         foreach ($this->properties as $property) {
             $val = $data[$property->name];
@@ -93,7 +93,7 @@ class Entity
                     $entityClassPath = $property->type[1];
                     $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
                     if ($property->type[0] === 'Entity[]') {
-                        is_array($val) or \PhpRest\abort(new BadArgumentException("请求参数 '{$property->name}' 不是数组"));
+                        is_array($val) or \PhpRest\abort(new BadArgumentException("数据源 '{$property->name}' 不是数组"));
                         $ary = [];
                         foreach($val as $d) {
                             $ary[] = $entity->makeInstanceWithData($app, $d, $withValidator);
@@ -102,15 +102,17 @@ class Entity
                     } else {
                         $val = $entity->makeInstanceWithData($app, $val, $withValidator);
                     }
-                } elseif($withValidator && $property->validation){
-                    $fields = $property->name;
-                    if (substr($property->type[0], -2) === '[]') {
-                        is_array($val) or \PhpRest\abort(new BadArgumentException("请求参数 '{$property->name}' 不是数组"));
-                        $fields = "{$property->name}.*";
+                } elseif($withValidator){
+                    $needArray = substr($property->type[0], -2) === '[]';
+                    if ($needArray) {
+                        is_array($val) or \PhpRest\abort(new BadArgumentException("数据源 '{$property->name}' 不是数组"));
                     }
-                    $vld = new Validator([$property->name => $val], [], 'zh-cn');
-                    $vld->rule($property->validation, $fields);
-                    $vld->validate() or \PhpRest\abort(new BadArgumentException(current($vld->errors())[0]));
+                    if ($property->validation) {
+                        $fields = $needArray ? "{$property->name}.*" : $property->name;
+                        $vld = new Validator([$property->name => $val], [], 'zh-cn');
+                        $vld->rule($property->validation, $fields);
+                        $vld->validate() or \PhpRest\abort(new BadArgumentException(current($vld->errors())[0]));
+                    }
                 }
                 $obj->{$property->name} = $val;
             } else {

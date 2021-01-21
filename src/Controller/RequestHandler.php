@@ -86,10 +86,12 @@ class RequestHandler
                         $inputs[$meta->name] = $entity->makeInstanceWithData($app, $source);
                     }
                 } else {
+                    $needArray = substr($meta->type[0], -2) === '[]';
+                    if ($needArray) {
+                        is_array($source) or \PhpRest\abort(new BadArgumentException("请求参数 '{$meta->name}' 不是数组"));
+                    }
                     if($meta->validation) {
-                        if (substr($meta->type[0], -2) === '[]') {
-                            // 验证基础数据类型数组
-                            is_array($source) or \PhpRest\abort(new BadArgumentException("请求参数 '{$meta->name}' 不是数组"));
+                        if ($needArray) {
                             $vldAry = new Validator([$meta->name => $source], [], 'zh-cn');
                             $vldAry->rule($meta->validation, "{$meta->name}.*");
                             $vldAry->validate() or \PhpRest\abort(new BadArgumentException(current($vldAry->errors())[0]));
