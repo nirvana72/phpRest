@@ -22,7 +22,11 @@ class RequestHandler
      */
     public function addParamMeta($meta) 
     {
-        if(!array_key_exists($meta->name, $this->paramMetas)) {
+        if(array_key_exists($meta->name, $this->paramMetas)) {
+            // 如果重复, 复盖部分属性, 唯一场景(先定义了path参数，又收集function参数，复盖类型和验证)
+            $this->paramMetas[$meta->name]->type = $meta->type;
+            $this->paramMetas[$meta->name]->validation = $meta->validation;
+        } else {
             $this->paramMetas[$meta->name] = $meta;
         }
     }

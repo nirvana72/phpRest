@@ -93,6 +93,9 @@ class ParamHandler
         if ($tag != '') {
             $desc = str_replace($tag, '', $desc);
             $tag = trim(substr($tag, strlen($tagName), -1));
+            if (strpos($tag, 'path.') === 0) {
+                $tag = str_replace('path.', 'attributes.', $tag);
+            }
             return [1, $tag, $desc];
         }
         return [0, null, $desc];
