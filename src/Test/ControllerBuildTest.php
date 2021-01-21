@@ -11,7 +11,7 @@ class ControllerBuildTest
 
     public function test1() {
         $builder = new \PhpRest\Controller\ControllerBuilder();
-        $controller = $this->controllerBuilder->build('App\Controller\Index2Controller');
+        $controller = $this->controllerBuilder->build('App\Controller\IndexController');
         \PhpRest\dump($controller);
     }
 }

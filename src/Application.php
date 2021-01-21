@@ -33,7 +33,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @param string|array $conf
      * @return Application
      */
-    public static function createDefault($conf = [])
+    public static function create($conf = [])
     {
         $default = [
             // 默认request对象来自 symfony
@@ -48,8 +48,8 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
 
         // 缓存对象
         if( function_exists('apcu_fetch') ) {
-            // $default += [ Cache::class => \DI\create(ApcuCache::class) ];
-            $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
+            $default += [ Cache::class => \DI\create(ApcuCache::class) ];
+            // $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
         } else {
             $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
         }
@@ -78,6 +78,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
             if ($entry == '.' || $entry == '..') { continue; }
             $path = $controllerPath . '/' . $entry;
             if (is_file($path)) {
+                // if ($entry === 'IndexController.php') {
                 if (substr($entry, -14) === 'Controller.php') {
                     $classPath = $namespace . '\\' . substr($entry, 0, -4);
                     $this->scanRoutesFromClass($classPath);
@@ -117,7 +118,6 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         $request = $this->get(Request::class);
         $httpMethod = $request->getMethod();
         $uri = $request->getRequestUri();
-        if ($uri === '/favicon.ico') { exit; }
 
         // Strip query string (?foo=bar) and decode URI
         if (false !== $pos = strpos($uri, '?')) {
@@ -137,7 +137,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         // FastRoute匹配当前路由
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
         try {
-            $next = function($request) use ($app, $routeInfo) {
+            $next = function($request) use ($app, $routeInfo, $httpMethod, $uri) {
                 if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {                    
                     if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
                         $request->attributes->add($routeInfo[2]);
