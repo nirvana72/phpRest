@@ -28,8 +28,6 @@ class SwaggerHandler
         $this->swagger['schemes'] = $this->config['schemes'];
         $this->swagger['tags'] = [];
         $this->swagger['paths'] = [];
-        
-        $this->makeDefaultResponseDefinition();
 
         foreach($app->controllers as $classPath) {
             if (0 !== strpos($classPath, $namesapce)) { continue; }
@@ -66,20 +64,6 @@ class SwaggerHandler
             'license' => [
                 'name' => 'Apache 2.0',
                 'url'  => 'http://www.apache.org/licenses/LICENSE-2.0.html'
-            ]
-        ];
-    }
-
-    // 创建默认的成功返回引用
-    private function makeDefaultResponseDefinition() 
-    {
-        $this->swagger['definitions'] = [
-            'Response200' => [
-                'type' => 'object',
-                'properties' => [
-                    'ret' => ['type' => 'integer', 'default' => 1],
-                    'msg' => ['type' => 'string',  'default' => 'success']
-                ]
             ]
         ];
     }
@@ -181,7 +165,7 @@ class SwaggerHandler
 
         $returnSchema = null;
         if ($returnSchema === 'void') {
-            $returnSchema = ['$ref' => "#/definitions/Response200"];
+            $returnSchema = $this->makeDefaultResponseDefinition();
         } elseif (strpos($returnType, '\\') !== false || preg_match("/^[A-Z]{1}$/", $returnType)) {
             // 返回实体类
             $entityClassPath = $returnType;
@@ -236,6 +220,23 @@ class SwaggerHandler
         }
 
         return ['description' => '成功返回', 'schema' => $returnSchema];
+    }
+
+    // 创建默认的成功返回引用
+    private function makeDefaultResponseDefinition() 
+    {
+        if (isset($this->swagger['definitions']['Response200']) === false) {
+            $this->swagger['definitions'] = [
+                'Response200' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'ret' => ['type' => 'integer', 'default' => 1],
+                        'msg' => ['type' => 'string',  'default' => 'success']
+                    ]
+                ]
+            ];
+        }
+        $returnSchema = ['$ref' => "#/definitions/Response200"];
     }
 
     // @return object 后面的json 转换成 ResponseSchema
@@ -335,7 +336,7 @@ class SwaggerHandler
     {
         if(substr($type, -2) === '[]')  return 'array';
         if(in_array($type, ['int', 'integer'])) return 'integer';
-        if($type === 'numeric') return 'number';
+        if(in_array($type, ['float', 'numeric'])) return 'number';
         if($type === 'bool') return 'boolean';
         if($type === 'Entity') return 'Entity';
         return 'string';
