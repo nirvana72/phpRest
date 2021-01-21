@@ -14,31 +14,26 @@ namespace PhpRest\Validator;
 class Validator extends \Valitron\Validator
 {
     /**
-     * @param callable|string $rule
-     * @param array|string $fields
-     * @return $this
+     * @param string $ruleStr
+     * @param string $fields
      */
-    public function rule($rule, $fields) 
+    public function rule($ruleStr, $fields) 
     {
-        if(is_string($rule)){
-            $rules = explode('|', $rule);
-            foreach ($rules as $r){
-                $params = explode('=', trim($r));
-                $rule = $params[0];
-                if($rule == 'regex') {
-                    $params = [$params[1]];
-                } else {
-                    $params = isset($params[1])?explode(',', $params[1]):[];
-                }
-                if($rule == 'in' || $rule == 'notIn'){                    
-                    $params = [$params];
-                }
-                call_user_func_array([$this, 'parent::rule'], array_merge([$rule, $fields], $params));
+        $ruleAry = explode('|', $ruleStr);
+        foreach($ruleAry as $r) {
+            $ary = explode('=', trim($r));
+            $rule = $ary[0];
+            if (count($ary) === 2) {
+                $params = $ary[1];
+                if ($rule !== 'regex' && false !== strpos($params, ',')) {
+                    $params = explode(',', $params);
+                } 
+                $params = array_merge([$rule, $fields], [$params]);
+                call_user_func_array([$this, 'parent::rule'], $params);
+            } else {
+                parent::rule($rule, $fields);
             }
-            return $this;
         }
-        parent::rule($rule, $fields);
-        return $this;
     }
 
     /**
