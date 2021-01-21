@@ -13,12 +13,6 @@ class AnnotationTag extends AnnotationBase
     public $parent;
 
     /**
-     * tag 后面 {@v ... } | {@bind ...}
-     * @var AnnotationTag[]
-     */
-    public $children = [];
-
-    /**
      * @var string
      */
     public $name = '';

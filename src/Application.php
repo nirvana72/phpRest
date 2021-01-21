@@ -142,14 +142,14 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
                     if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
                         $request->attributes->add($routeInfo[2]);
                     }
-                    if ($routeInfo[1] instanceof \Closure) { // 手动注册的闭包路由
-                        return $routeInfo[1]($app, $request);
-                    } elseif (is_array($routeInfo[1])) {
+                    if (is_array($routeInfo[1])) {
                         list($classPath, $actionName) = $routeInfo[1];
                         $controller = $app->get(ControllerBuilder::class)->build($classPath);
                         $routeInstance = $controller->getRoute($actionName);
                         $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
                         return $routeInstance->invoke($app, $request, $classPath, $actionName);
+                    } elseif ($routeInfo[1] instanceof \Closure) { // 手动注册的闭包路由
+                        return $routeInfo[1]($app, $request);
                     } else {
                         throw new BadCodeException("无法解析路由");
                     }

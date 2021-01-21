@@ -20,4 +20,9 @@ class AnnotationBlock extends AnnotationBase
      * @var string
      */
     public $position = '';
+
+    /**
+     * @var AnnotationTag[]
+     */
+    public $children = [];
 }

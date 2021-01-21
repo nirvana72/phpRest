@@ -13,20 +13,20 @@ class ParamHandler
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
-        $target = $ann->parent->name;
-        $route = $controller->getRoute($target);
+        $method = $ann->parent->name;
+        $route = $controller->getRoute($method);
         if ($route === false) { return; }
         list($paramType, $paramName, $paramDesc) = $ann->description;
 
         $paramMeta = $route->requestHandler->getParamMeta($paramName);
-        $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 注解参数 {$paramName} 没有被使用"));
+        $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 注解参数 {$paramName} 没有被使用"));
 
         if ($paramMeta->type[0] === 'Entity') {
             if (empty($paramType) === false) {
                 // 绑定实体类参数，@param 可以不写类型，默认按参数描述指定
                 // 但是 @param 如果写了类型，就需要验证类型一至
                 $paramTypeInMethodName = strpos($paramType, '\\') !== false ? $paramMeta->type[1] : end(explode('\\', $paramMeta->type[1]));
-                $paramType === $paramTypeInMethodName or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 实体类参数 {$paramName} 与@param描述不一至"));
+                $paramType === $paramTypeInMethodName or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 实体类参数 {$paramName} 与@param描述不一至"));
             }
         }
         else {
@@ -43,7 +43,7 @@ class ParamHandler
                     // 如果没写全命名空间，需要通过反射取得全命名空间
                     $entityClassPath = \PhpRest\Utils\ReflectionHelper::resolveFromReflector($controller->classPath, $entityClassPath);
                 }
-                class_exists($entityClassPath) or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} @param {$paramName} 指定的实体类 {$entityClassPath} 不存在"));
+                class_exists($entityClassPath) or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} @param {$paramName} 指定的实体类 {$entityClassPath} 不存在"));
                 $paramMeta->type = [$paramType, $entityClassPath];
             } else {
                 // 否则作为基础类型处理
@@ -53,20 +53,19 @@ class ParamHandler
         }
 
         list($ret, $tagContent, $paramDesc) = $this->loadInlineTag('bind', $paramDesc);
-        $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 参数验证描述 bind 格式不正确"));
+        $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 参数验证描述 bind 格式不正确"));
         if ($ret === 1) {
             $paramMeta->source = $tagContent;
         }
 
         list($ret, $tagContent, $paramDesc) = $this->loadInlineTag('rule', $paramDesc);
-        $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$target} 参数验证描述 rule 格式不正确"));
+        $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 参数验证描述 rule 格式不正确"));
         if ($ret === 1) {
-            $paramMeta->validation .= '|' . $tagContent;
+            $paramMeta->validation .= "|{$tagContent}";
             $paramMeta->validation = ltrim($paramMeta->validation, '|');
         }
 
-        $paramMeta->description = trim($paramDesc);
-        if (empty($paramMeta->description)) $paramMeta->description = $paramName;
+        if ($paramDesc !== '') $paramMeta->description = $paramDesc;
     }
 
     // $desc = 'p1 {@bind request.user} {@rule regax=/^[a-z]{5,10}$/}';
@@ -90,8 +89,8 @@ class ParamHandler
                 return [-1, null, $desc];
             }
         }
-        if ($tag != '') {
-            $desc = str_replace($tag, '', $desc);
+        if ($tag !== '') {
+            $desc = trim(str_replace($tag, '', $desc));
             $tag = trim(substr($tag, strlen($tagName), -1));
             return [1, $tag, $desc];
         }

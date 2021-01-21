@@ -2,7 +2,7 @@
 namespace PhpRest\Annotation;
 
 /**
- * 实现 ArrayAccess, 让对象具有数据访问能力, 以便支持\JmesPath\search
+ * 实现 ArrayAccess, 让对象具有数组访问能力, 以便支持\JmesPath\search
  */
 class AnnotationBase implements \ArrayAccess
 {

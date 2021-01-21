@@ -17,7 +17,7 @@ class Controller
     public $description = '';
 
     /**
-     * path /xxx
+     * path /xxx 路由前缀
      * @var string
      */
     public $path = '';
@@ -89,5 +89,14 @@ class Controller
             return $this->routes[$actionName];
         }
         return false;
+    }
+
+    /**
+     * 返回controller类名，返回错误时用
+     * @return string
+     */
+    public function getClassName() 
+    {
+        return end(explode('\\', $this->classPath));
     }
 }

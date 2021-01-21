@@ -17,18 +17,14 @@ class RouteHandler
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
-        $array = explode(' ', trim(preg_replace ( "/\s(?=\s)/","\\1", $ann->description)));
-        count($array) === 2 or \PhpRest\abort(new BadCodeException("{$controller->classPath}->{$ann->parent->summary} @route 注解格式不正确"));
+        $array = explode(' ', trim(preg_replace("/\s(?=\s)/", "\\1", $ann->description)));
+        count($array) === 2 or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$ann->parent->summary} @route 注解格式不正确"));
 
         $methodType = strtoupper($array[0]);
         $methodUri  = $array[1]; // 支持 path 参数, 规则参考FastRoute
         $actionName = $ann->parent->name; // 方法名
-        in_array($methodType, ['GET','POST','PUT','HEAD','PATCH','OPTIONS','DELETE']) or \PhpRest\abort(new BadCodeException("{$controller->classPath}::{$ann->parent->summary} @route 注解方法不支持"));
+        in_array($methodType, ['GET','POST','PUT','HEAD','PATCH','OPTIONS','DELETE']) or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$ann->parent->summary} @route 注解方法不支持"));
         
-        // 反射类文件对象
-        $classRef = new \ReflectionClass($controller->classPath);
-        $method = $classRef->getMethod($actionName);
-
         // 实例化一个路由对象
         $route = new Route();
         $route->method      = $methodType;
@@ -54,9 +50,12 @@ class RouteHandler
             }
         }
         
+        // 反射类文件对象
+        $classRef = new \ReflectionClass($controller->classPath);
+        $methodRef = $classRef->getMethod($actionName);
         $paramSource = in_array($methodType, ['POST', 'PUT']) ? 'request' : 'query';
         // 遍历方法的参数，封装成 ParamMeta 对象, 收集到route->requestHandler里
-        foreach ($method->getParameters() as $param) {
+        foreach ($methodRef->getParameters() as $param) {
             $paramName = $param->getName(); // 参数名 不带$
 
             $meta = new ParamMeta();
@@ -72,7 +71,7 @@ class RouteHandler
                 $meta->type = [$paramType->getName(), ''];
                 if ($meta->type[0] === 'int')   { $meta->validation = 'integer'; } // function(int $p1)
                 if ($meta->type[0] === 'float') { $meta->validation = 'numeric'; } // function(float $p1)
-                if ($meta->type[0] === 'array') { $meta->type[0] = 'string[]'; } // function(float $p1)
+                if ($meta->type[0] === 'array') { $meta->type[0] = 'string[]'; } // function(array $p1)
             }
             $paramClass = $param->getClass(); // function(User $user)
             if($paramClass){
