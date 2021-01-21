@@ -27,8 +27,16 @@ class Validator extends \Valitron\Validator
                 $params = $ary[1];
                 if ($rule !== 'regex' && false !== strpos($params, ',')) {
                     $params = explode(',', $params);
-                } 
-                $params = array_merge([$rule, $fields], [$params]);
+                    if ($rule === 'in' || $rule === 'notIn') {
+                       $params = [$params];
+                    }
+                } else {
+                    $params = [$params];
+                }
+                // $v->rule('notIn', 'color', ['blue', 'green', 'red', 'yellow']);
+                // $v->rule('lengthBetween', 'username', 1, 10);
+                // $v->rule('length', 'username', 10);
+                $params = array_merge([$rule, $fields], $params);
                 call_user_func_array([$this, 'parent::rule'], $params);
             } else {
                 parent::rule($rule, $fields);

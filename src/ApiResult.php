@@ -33,8 +33,8 @@ class ApiResult
     }
 
     public static function assert($flag, $msg = []) {
-        $sucMsg = $msgs[0]?:'success';
-        $errMsg = $msgs[1]?:'出错了';
+        $sucMsg = $msg[0]?:'success';
+        $errMsg = $msg[1]?:'出错了';
         $ret = $flag ? 1 : -1;
         $msg = $flag ? $sucMsg : $errMsg;
         return new ApiResult($ret, $msg);

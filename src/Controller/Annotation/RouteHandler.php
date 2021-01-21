@@ -72,6 +72,7 @@ class RouteHandler
                 $meta->type = [$paramType->getName(), ''];
                 if ($meta->type[0] === 'int')   { $meta->validation = 'integer'; } // function(int $p1)
                 if ($meta->type[0] === 'float') { $meta->validation = 'numeric'; } // function(float $p1)
+                if ($meta->type[0] === 'array') { $meta->type[0] = 'string[]'; } // function(float $p1)
             }
             $paramClass = $param->getClass(); // function(User $user)
             if($paramClass){

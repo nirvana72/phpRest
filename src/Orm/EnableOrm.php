@@ -49,13 +49,22 @@ trait EnableOrm
     {
         $entity = $this->getEntity();
         $data = [];
+        $pkProperty = null;
         foreach ($entity->properties as $property) {
+            if ($property->isPrimaryKey && $property->isAutoIncrement) {
+                $pkProperty = $property->name;
+            }
             if ($property->isAutoIncrement) {
                 continue;
             }
             $data[$property->field] = $this->{$property->name};
         }
-        return $this->db->insert($entity->table, $data);
+        $res = $this->db->insert($entity->table, $data);
+        $autoId = $this->db->id();
+        if ($autoId !== null && $pkProperty !== null) {
+            $this->{$pkProperty} = $autoId;
+        }
+        return $res;
     }
 
     public function update() 
