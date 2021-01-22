@@ -51,8 +51,8 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
 
         // 缓存对象
         if( function_exists('apcu_fetch') ) {
-            // $default += [ Cache::class => \DI\create(ApcuCache::class) ];
-            $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
+            $default += [ Cache::class => \DI\create(ApcuCache::class) ];
+            // $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
         } else {
             $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
         }
