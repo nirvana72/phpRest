@@ -8,32 +8,63 @@ use PhpRest\Exception\BadCodeException;
 
 class SwaggerHandler
 {
-    public static function register($app, $namesapces, $callback = null) 
+    /**
+     * 把所有接口注册成一个swagger
+     * 
+     * @param Application $app
+     * @param string $route
+     * @param callable $callback
+     */
+    public static function register($app, $route, $callback = null) 
     {
-        if (is_string($namesapces)) $namesapces = [ 'api' => $namesapces ];
-        foreach($namesapces as $key => $namesapce) {
+        $app->addRoute('GET', $route, function ($app, $request) use($callback){
+            $swaggerHandler = $app->get(SwaggerHandler::class);
+            $swaggerHandler->build($app);
+            if ($callback) {
+                $callback($swaggerHandler->swagger);
+            }
+            return new Response($swaggerHandler->toJson());
+        });
+    }
+
+    /**
+     * swagger分组
+     * 
+     * $group:
+     * [
+     *    'sys' => 'App\Controller\Sys',
+     *    'bll' => 'App\Controller\Bll
+     * ]
+     * 
+     * @param Application $app
+     * @param array $group
+     * @param callable $callback
+     */
+    public static function registerGroup($app, $group, $callback = null) 
+    {        
+        foreach($group as $key => $namesapce) {
             $app->addRoute('GET', "/swagger/{$key}.json", function ($app, $request) use($callback, $namesapce, $key){
                 $swaggerHandler = $app->get(SwaggerHandler::class);
-                $swaggerHandler->build($app, $namesapce, $key);
+                $swaggerHandler->build($app, $namesapce);
                 if ($callback) {
                     $callback($swaggerHandler->swagger, $key);
                 }
                 return new Response($swaggerHandler->toJson());
             });
         }
-    }   
+    }
 
-    public function build($app, $namesapce, $key) 
+    public function build($app, $namesapce = '') 
     {
         $this->swagger['swagger'] = '2.0';
-        $this->swagger['info'] = $this->makeInfo($key);
+        $this->swagger['info'] = $this->makeInfo();
         $this->swagger['host'] = $this->appHost;
         $this->swagger['schemes'] = $this->config['schemes'];
         $this->swagger['tags'] = [];
         $this->swagger['paths'] = [];
 
         foreach($app->controllers as $classPath) {
-            if (0 !== strpos($classPath, $namesapce)) { continue; }
+            if ($namesapce !== '' && 0 !== strpos($classPath, $namesapce)) { continue; }
 
             $controller = $app->get(ControllerBuilder::class)->build($classPath);
 
@@ -53,12 +84,10 @@ class SwaggerHandler
     }
 
     // 基本信息
-    private function makeInfo($key) 
+    private function makeInfo() 
     {
-        $title = "{$this->appName} - {$this->appEnv}";
-        if ($key !== 'api') $title = "{$this->appName} - {$key} - {$this->appEnv}";
         return [
-            'title'       => $title,
+            'title'       => "{$this->appName} - {$this->appEnv}",
             'description' => '',
             'version'     => $this->config['version'],
             'termsOfService' => 'http://swagger.io/terms/',
