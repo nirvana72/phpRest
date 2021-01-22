@@ -6,6 +6,12 @@ use Symfony\Component\HttpFoundation\Response;
 class ResponseRender implements ResponseRenderInterface
 {
     /**
+     * @Inject
+     * @var \PhpRest\Application
+     */
+    private $app;
+
+    /**
      * @param $return
      */
     public function render($return)
@@ -15,12 +21,12 @@ class ResponseRender implements ResponseRenderInterface
             return $return;
         }
 
-        $response = new Response();
+        $response = $this->app->make(Response::class);
         
         if ($return !== null) {
-            $response->headers->set('Content-Type', 'application/json');
             $value = json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             $response->setContent($value);
+            $response->headers->set('Content-Type', 'application/json');
         }
 
         return $response;

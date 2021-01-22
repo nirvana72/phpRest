@@ -14,6 +14,7 @@ use DI\FactoryInterface;
 use Invoker\InvokerInterface;
 use PhpRest\Controller\ControllerBuilder;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use PhpRest\Exception\ExceptionHandlerInterface;
 use PhpRest\Exception\ExceptionHandler;
@@ -38,10 +39,12 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         $default = [
             // 默认request对象来自 symfony
             Request::class => \DI\factory([Application::class, 'createRequestFromSymfony']),
+            // Response 对象
+            Response::class => \DI\create(),
             // 默认错误处理器
-            ExceptionHandlerInterface::class => \DI\create(ExceptionHandler::class),
+            ExceptionHandlerInterface::class => \DI\autowire(ExceptionHandler::class),
             // 默认输出处理器
-            ResponseRenderInterface::class => \DI\create(ResponseRender::class),
+            ResponseRenderInterface::class => \DI\autowire(ResponseRender::class),
             // 数据库配置
             \Medoo\Medoo::class => \DI\create()->constructor(\DI\get('database'))
         ];
@@ -117,9 +120,14 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     {
         $request = $this->get(Request::class);
         $httpMethod = $request->getMethod();
-        $uri = $request->getRequestUri();
+        if ($httpMethod == 'OPTIONS') {
+            $response = $this->make(Response::class);
+            $response->setStatusCode(200);
+            $response->send();
+            exit;
+        }
 
-        // Strip query string (?foo=bar) and decode URI
+        $uri = $request->getRequestUri();
         if (false !== $pos = strpos($uri, '?')) {
             $uri = substr($uri, 0, $pos);
         }
