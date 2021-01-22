@@ -1,6 +1,10 @@
 {
     "name": "nirvana72/phprest",
-    "description": "模仿 caoym/phpboot, 以学习为目的重写",
+    "description": "PhpRest 是一款纯restful的轻量框架",
+    "keywords": [
+      "phpRest",
+      "restful"
+    ],
     "authors": [
         {
             "name": "nijia",
@@ -8,7 +12,7 @@
         }
     ],
     "require": {
-        "php": ">=7.0",
+        "php": ">=7.3",
         "php-di/php-di": "^6.0",
         "doctrine/annotations": "^1.11",
         "doctrine/cache": "~1.10",
