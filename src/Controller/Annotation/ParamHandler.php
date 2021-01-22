@@ -55,6 +55,7 @@ class ParamHandler
         list($ret, $tagContent, $paramDesc) = $this->loadInlineTag('bind', $paramDesc);
         $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 参数验证描述 bind 格式不正确"));
         if ($ret === 1) {
+            if (strpos($tagContent, 'path.')) $tagContent = str_replace('path.', 'attributes.', $tagContent);
             $paramMeta->source = $tagContent;
         }
 
