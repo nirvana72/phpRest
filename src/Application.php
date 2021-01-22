@@ -222,11 +222,11 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     }
     
     /**
-     * @param \string[] $globalHooks
+     * @param string $globalHooks
      */
-    public function addGlobalHooks($globalHooks)
+    public function addGlobalHook($globalHook)
     {
-        $this->globalHooks += $globalHooks;
+        $this->globalHooks[] = $globalHook;
     }
 
     /**
