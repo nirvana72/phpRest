@@ -23,7 +23,9 @@ class SwaggerHandler
             if ($callback) {
                 $callback($swaggerHandler->swagger);
             }
-            return new Response($swaggerHandler->toJson());
+            $response = Application::getInstance()->make(Response::class);
+            $response->setContent($swaggerHandler->toJson());
+            return $response;
         });
     }
 
@@ -48,7 +50,9 @@ class SwaggerHandler
                 if ($callback) {
                     $callback($swaggerHandler->swagger, $key);
                 }
-                return new Response($swaggerHandler->toJson());
+                $response = Application::getInstance()->make(Response::class);
+                $response->setContent($swaggerHandler->toJson());
+                return $response;
             });
         }
     }
