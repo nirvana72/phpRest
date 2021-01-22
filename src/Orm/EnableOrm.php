@@ -1,27 +1,11 @@
 <?php
 namespace PhpRest\Orm;
 
+use PhpRest\Application;
 use PhpRest\Entity\EntityBuilder;
 
 trait EnableOrm
 {
-    /**
-     * @Inject
-     * @var \PhpRest\Application
-     */
-    private $app;
-
-    /**
-     * @Inject
-     * @var \Medoo\Medoo
-     */
-    private $db;
-
-    private function getEntity() 
-    {
-        return $this->app->get(EntityBuilder::class)->build(self::class);
-    }
-
     /**
      * 填充数据
      * 
@@ -30,24 +14,27 @@ trait EnableOrm
      */
     public function fill($data, $withValidator = true)
     {
-        $entity = $this->getEntity();
-        return $entity->makeInstanceWithData($this->app, $data, $withValidator, $this);
+        $entity = Application::getInstance()->get(EntityBuilder::class)->build(self::class);
+        return $entity->makeInstanceWithData($data, $withValidator, $this);
     }
 
-    public function findOne($where = [])
+    public static function findOne($where = [])
     {
-        $entity = $this->getEntity();
+        $self   = Application::getInstance()->make(self::class);
+        $entity = Application::getInstance()->get(EntityBuilder::class)->build(self::class);
         $columns = [];
         foreach ($entity->properties as $property) {
             $columns[] = "{$property->field}({$property->name})";
         }
-        $data = $this->db->get($entity->table, $columns, $where);
-        $entity->makeInstanceWithData($this->app, $data, false, $this);
+        $data = $self->getDb()->get($entity->table, $columns, $where);
+        if ($data === null) return null;
+        $entity->makeInstanceWithData($data, false, $self);
+        return $self;
     }
 
     public function insert()
     {
-        $entity = $this->getEntity();
+        $entity = Application::getInstance()->get(EntityBuilder::class)->build(self::class);
         $data = [];
         $pkProperty = null;
         foreach ($entity->properties as $property) {
@@ -59,8 +46,8 @@ trait EnableOrm
             }
             $data[$property->field] = $this->{$property->name};
         }
-        $res = $this->db->insert($entity->table, $data);
-        $autoId = $this->db->id();
+        $res = $this->getDb()->insert($entity->table, $data);
+        $autoId = $this->getDb()->id();
         if ($autoId !== null && $pkProperty !== null) {
             $this->{$pkProperty} = $autoId;
         }
@@ -69,7 +56,7 @@ trait EnableOrm
 
     public function update() 
     {
-        $entity = $this->getEntity();
+        $entity = Application::getInstance()->get(EntityBuilder::class)->build(self::class);
         $data = [];
         $where = [];
         foreach ($entity->properties as $property) {
@@ -79,12 +66,18 @@ trait EnableOrm
                 $data[$property->field] = $this->{$property->name};
             }
         }
-        return $this->db->update($entity->table, $data, $where);
+        return $this->getDb()->update($entity->table, $data, $where);
     }
 
-    public function delete($pk = null) 
+    public static function delete($pk = null) 
     {
-        $entity = $this->getEntity();
+        $self = Application::getInstance()->make(self::class);
+        return $self->remove($pk);
+    }
+
+    public function remove($pk = null) 
+    {
+        $entity = Application::getInstance()->get(EntityBuilder::class)->build(self::class);
         $where = $pk;
         if ($where === null) {
             foreach ($entity->properties as $property) {
@@ -93,7 +86,15 @@ trait EnableOrm
                 }
             }
         }
-        
-        return $this->db->delete($entity->table, $where);
+        return $this->getDb()->delete($entity->table, $where);
+    }
+
+    private $db = null;
+    
+    private function getDb() {
+        if ($this->db === null) {
+            $this->db = Application::getInstance()->get(\Medoo\Medoo::class);
+        }
+        return $this->db;
     }
 }

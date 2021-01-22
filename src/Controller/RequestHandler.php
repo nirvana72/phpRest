@@ -2,6 +2,7 @@
 namespace PhpRest\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
+use PhpRest\Application;
 use PhpRest\Meta\ParamMeta;
 use PhpRest\Utils\ArrayAdaptor;
 use PhpRest\Validator\Validator;
@@ -49,11 +50,10 @@ class RequestHandler
     /**
      * 从request中获取需要的参数
      * 
-     * @param Application $app
      * @param Request $request
      * @return array
      */
-    public function makeParams($app, $request) 
+    public function makeParams($request) 
     {
         $vld = new Validator([], [], 'zh-cn');
         $requestArray = new ArrayAdaptor($request);
@@ -75,15 +75,15 @@ class RequestHandler
                 if ($meta->type[0] === 'Entity' || $meta->type[0] === 'Entity[]') {
                     // 参数是个实体，实体验证在Entity创建逻辑中
                     $entityClassPath = $meta->type[1];
-                    $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
+                    $entity = Application::getInstance()->get(EntityBuilder::class)->build($entityClassPath);
                     if ($meta->type[0] === 'Entity[]') {   
                         is_array($source) or \PhpRest\abort(new BadArgumentException("请求参数 '{$meta->name}' 不是数组"));
                         $inputs[$meta->name] = [];
                         foreach($source as $d) {
-                            $inputs[$meta->name][] = $entity->makeInstanceWithData($app, $d);
+                            $inputs[$meta->name][] = $entity->makeInstanceWithData($d);
                         }                        
                     } else {
-                        $inputs[$meta->name] = $entity->makeInstanceWithData($app, $source);
+                        $inputs[$meta->name] = $entity->makeInstanceWithData($source);
                     }
                 } else {
                     $needArray = substr($meta->type[0], -2) === '[]';

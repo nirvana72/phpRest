@@ -1,16 +1,11 @@
 <?php
 namespace PhpRest\Render;
 
+use PhpRest\Application;
 use Symfony\Component\HttpFoundation\Response;
 
 class ResponseRender implements ResponseRenderInterface
 {
-    /**
-     * @Inject
-     * @var \PhpRest\Application
-     */
-    private $app;
-
     /**
      * @param $return
      */
@@ -21,7 +16,7 @@ class ResponseRender implements ResponseRenderInterface
             return $return;
         }
 
-        $response = $this->app->make(Response::class);
+        $response = Application::getInstance()->make(Response::class);
         
         if ($return !== null) {
             $value = json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);

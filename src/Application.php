@@ -51,8 +51,8 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
 
         // 缓存对象
         if( function_exists('apcu_fetch') ) {
-            $default += [ Cache::class => \DI\create(ApcuCache::class) ];
-            // $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
+            // $default += [ Cache::class => \DI\create(ApcuCache::class) ];
+            $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
         } else {
             $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
         }
@@ -63,7 +63,8 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         $builder->useAutowiring(false);
         $builder->useAnnotations(true);
         $container = $builder->build();
-        return $container->get(self::class);
+        self::$_instance = $container->get(self::class);
+        return self::$_instance;
     }
 
     /**
@@ -133,55 +134,61 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         }
         $uri = rawurldecode($uri);
 
-        $app = $this;
         // 把解析注解收集的信息，注册成FastRoute路由
-        $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) use($app) {
-            foreach($app->routes as $route) {
+        $dispatcher = \FastRoute\simpleDispatcher(function(\FastRoute\RouteCollector $r) {
+            foreach(Application::getInstance()->routes as $route) {
                 list($method, $uri, $callable) = $route;
                 $r->addRoute($method, $uri, $callable);
             }
         });
-        
         // FastRoute匹配当前路由
         $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
-        try {
-            $next = function($request) use ($app, $routeInfo, $httpMethod, $uri) {
-                if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {                    
-                    if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
-                        $request->attributes->add($routeInfo[2]);
-                    }
-                    if (is_array($routeInfo[1])) {
-                        list($classPath, $actionName) = $routeInfo[1];
-                        $controller = $app->get(ControllerBuilder::class)->build($classPath);
-                        $routeInstance = $controller->getRoute($actionName);
-                        $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
-                        return $routeInstance->invoke($app, $request, $classPath, $actionName);
-                    } elseif ($routeInfo[1] instanceof \Closure) { // 手动注册的闭包路由
-                        return $routeInfo[1]($app, $request);
-                    } else {
-                        throw new BadCodeException("无法解析路由");
-                    }
-                } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
-                    throw new BadRequestException("{$uri} 访问地址不存在");
-                } elseif ($routeInfo[0] == \FastRoute\Dispatcher::METHOD_NOT_ALLOWED) {
-                    throw new BadRequestException("{$uri} 不支持 {$httpMethod} 请求");
-                } else {
-                    throw new BadRequestException("unknown dispatch return {$routeInfo[0]}");
+        $next = function($request) use ($routeInfo, $httpMethod, $uri) {
+            if ($routeInfo[0] == \FastRoute\Dispatcher::FOUND) {                    
+                if (count($routeInfo[2])) { // 支持 path 参数, 规则参考FastRoute
+                    $request->attributes->add($routeInfo[2]);
                 }
-            };
-
-            foreach (array_reverse($app->globalHooks) as $hookName){
-                $next = function($request)use($app, $hookName, $next){
-                    return $app->get($hookName)->handle($request, $next);
-                };
+                if (is_array($routeInfo[1])) {
+                    list($classPath, $actionName) = $routeInfo[1];
+                    $controller = Application::getInstance()->get(ControllerBuilder::class)->build($classPath);
+                    $routeInstance = $controller->getRoute($actionName);
+                    $routeInstance->hooks = array_merge($controller->hooks, $routeInstance->hooks); // 合并class + method hook
+                    return $routeInstance->invoke($request, $classPath, $actionName);
+                } elseif ($routeInfo[1] instanceof \Closure) { // 手动注册的闭包路由
+                    return $routeInfo[1]($request);
+                } else {
+                    throw new BadCodeException("无法解析路由");
+                }
+            } elseif ($routeInfo[0] == \FastRoute\Dispatcher::NOT_FOUND) {
+                throw new BadRequestException("{$uri} 访问地址不存在");
+            } elseif ($routeInfo[0] == \FastRoute\Dispatcher::METHOD_NOT_ALLOWED) {
+                throw new BadRequestException("{$uri} 不支持 {$httpMethod} 请求");
+            } else {
+                throw new BadRequestException("unknown dispatch return {$routeInfo[0]}");
             }
+        };
 
+        foreach (array_reverse(Application::getInstance()->globalHooks) as $hookName){
+            $next = function($request)use($hookName, $next){
+                return Application::getInstance()->get($hookName)->handle($request, $next);
+            };
+        }
+
+        try {
             $response = $next($request);
             $response->send();
         } catch (\Throwable $e) {
-            $exceptionHandler = $app->get(ExceptionHandlerInterface::class);
+            $exceptionHandler = Application::getInstance()->get(ExceptionHandlerInterface::class);
             $exceptionHandler->render($e)->send();
         }
+    }
+
+    /**
+     * 获取单列
+     */
+    public static function getInstance() 
+    {
+        return self::$_instance;
     }
 
     /**
@@ -237,14 +244,19 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         $this->globalHooks[] = $globalHook;
     }
 
-    /**
+    /** 
      * @param string $method
      * @param string $uri
-     * @param callable $handler function(Application $app, Request $request):Response
+     * @param callable $handler function(Request $request):Response
      */
     public function addRoute($method, $uri, callable $handler)
     {
         $this->routes[] = [$method, $uri, $handler];
+    }
+
+    public function getControllers() 
+    {
+        return $this->controllers;
     }
 
     /** 
@@ -260,18 +272,23 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * 
      * @var array 
      * */
-    public $routes = [];
+    private $routes = [];
 
     /** 
      * 所有controller类名
      * @var string 
      * */
-    public $controllers = [];
+    private $controllers = [];
 
     /**
      * 全局Hook
      * 
      * @var string[] Hook类全命名空间
      */
-    public $globalHooks = [];
+    private $globalHooks = [];
+
+    /**
+     * 单列
+     */
+    private static $_instance;
 }

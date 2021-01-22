@@ -1,24 +1,19 @@
 <?php
 namespace PhpRest\Exception;
 
+use PhpRest\Application;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ExceptionHandler implements ExceptionHandlerInterface
 {
     /**
-     * @Inject
-     * @var \PhpRest\Application
-     */
-    private $app;
-
-    /**
      * @param \Throwable $e
      * @return Response
      */
     public function render(\Throwable $e)
     {
-        $response = $this->app->make(Response::class);
+        $response = Application::getInstance()->make(Response::class);
         $response->setContent($e->getMessage());
         if($e instanceof HttpException){
             $response->setStatusCode($e->getStatusCode());

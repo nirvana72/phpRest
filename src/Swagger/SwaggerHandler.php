@@ -2,6 +2,7 @@
 namespace PhpRest\Swagger;
 
 use Symfony\Component\HttpFoundation\Response;
+use PhpRest\Application;
 use PhpRest\Entity\EntityBuilder;
 use PhpRest\Controller\ControllerBuilder;
 use PhpRest\Exception\BadCodeException;
@@ -11,15 +12,14 @@ class SwaggerHandler
     /**
      * 把所有接口注册成一个swagger
      * 
-     * @param Application $app
      * @param string $route
      * @param callable $callback
      */
-    public static function register($app, $route, $callback = null) 
+    public static function register($route, $callback = null) 
     {
-        $app->addRoute('GET', $route, function ($app, $request) use($callback){
-            $swaggerHandler = $app->get(SwaggerHandler::class);
-            $swaggerHandler->build($app);
+        Application::getInstance()->addRoute('GET', $route, function ($request) use($callback){
+            $swaggerHandler = Application::getInstance()->get(SwaggerHandler::class);
+            $swaggerHandler->build();
             if ($callback) {
                 $callback($swaggerHandler->swagger);
             }
@@ -36,16 +36,15 @@ class SwaggerHandler
      *    'bll' => 'App\Controller\Bll
      * ]
      * 
-     * @param Application $app
      * @param array $group
      * @param callable $callback
      */
-    public static function registerGroup($app, $group, $callback = null) 
+    public static function registerGroup($group, $callback = null) 
     {        
         foreach($group as $key => $namesapce) {
-            $app->addRoute('GET', "/swagger/{$key}.json", function ($app, $request) use($callback, $namesapce, $key){
-                $swaggerHandler = $app->get(SwaggerHandler::class);
-                $swaggerHandler->build($app, $namesapce);
+            Application::getInstance()->addRoute('GET', "/swagger/{$key}.json", function ($request) use($callback, $namesapce, $key){
+                $swaggerHandler = Application::getInstance()->get(SwaggerHandler::class);
+                $swaggerHandler->build($namesapce);
                 if ($callback) {
                     $callback($swaggerHandler->swagger, $key);
                 }
@@ -54,7 +53,7 @@ class SwaggerHandler
         }
     }
 
-    public function build($app, $namesapce = '') 
+    public function build($namesapce = '') 
     {
         $this->swagger['swagger'] = '2.0';
         $this->swagger['info'] = $this->makeInfo();
@@ -63,15 +62,15 @@ class SwaggerHandler
         $this->swagger['tags'] = [];
         $this->swagger['paths'] = [];
 
-        foreach($app->controllers as $classPath) {
+        foreach(Application::getInstance()->getControllers() as $classPath) {
             if ($namesapce !== '' && 0 !== strpos($classPath, $namesapce)) { continue; }
 
-            $controller = $app->get(ControllerBuilder::class)->build($classPath);
+            $controller = Application::getInstance()->get(ControllerBuilder::class)->build($classPath);
 
             $this->addTag($controller->summary, $controller->description);
             
             foreach($controller->routes as $action => $route) {
-                $path = $this->makePath($app, $controller, $route);
+                $path = $this->makePath($controller, $route);
                 $method = strtolower($route->method);
                 $this->swagger['paths'][$route->uri][$method] = $path;
             }
@@ -103,7 +102,7 @@ class SwaggerHandler
     }
 
     // 循环调用，创建API
-    private function makePath($app, $controller, $route) 
+    private function makePath($controller, $route) 
     {
         $modifyTime = date("Y-m-d H:i:s", $controller->modifyTimespan);
 
@@ -128,10 +127,10 @@ class SwaggerHandler
                 $schema = [];
                 if ($param->type[0] === 'Entity[]') {
                     $schema['type'] = 'array';
-                    $schema['items'] = $this->makeDefinition($app, $param->type[1]);
+                    $schema['items'] = $this->makeDefinition($param->type[1]);
                 }
                 elseif ($param->type[0] === 'Entity') {
-                    $schema = $this->makeDefinition($app, $param->type[1]);
+                    $schema = $this->makeDefinition($param->type[1]);
                 }
                 else {
                     $schema['description'] = $param->description . ($param->validation? " [{$param->validation}]" : '');
@@ -183,13 +182,13 @@ class SwaggerHandler
             $path['parameters'][] = $bodyParameter;
         }
 
-        $path['responses']['200'] = $this->makeResponse($app, $controller, $route);
+        $path['responses']['200'] = $this->makeResponse($controller, $route);
         
         return $path;
     }
 
     // 生成 Response 描述
-    private function makeResponse($app, $controller, $route) 
+    private function makeResponse($controller, $route) 
     {
         $returnType = $route->return[0];
         $isArray = substr($returnType, -2) === '[]';
@@ -211,9 +210,9 @@ class SwaggerHandler
             }
             if ($isArray === true) {
                 $returnSchema['type'] = 'array';
-                $returnSchema['items'] = $this->makeDefinition($app, $entityClassPath);
+                $returnSchema['items'] = $this->makeDefinition($entityClassPath);
             } else {
-                $returnSchema = $this->makeDefinition($app, $entityClassPath);
+                $returnSchema = $this->makeDefinition($entityClassPath);
             }
         }
         elseif ($returnType === 'object') {
@@ -320,20 +319,20 @@ class SwaggerHandler
     }
 
     // 如果是实体类， 创建引用
-    private function makeDefinition($app, $entityClassPath) 
+    private function makeDefinition($entityClassPath) 
     {
         $defName = str_replace('\\', '', $entityClassPath);
         if (isset($this->swagger['definitions'][$defName]) === false) {
             $entityObj = ['type' => 'object', 'properties' => []];
-            $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
+            $entity = Application::getInstance()->get(EntityBuilder::class)->build($entityClassPath);
             foreach($entity->properties as $property) {
                 if ($property->type[0] === 'Entity[]') {
                     $itemObj['type'] = 'array';
-                    $itemObj['items'] = $this->makeDefinition($app, $property->type[1]);
+                    $itemObj['items'] = $this->makeDefinition($property->type[1]);
                     $entityObj['properties'][$property->name] = $itemObj;
                 }
                 elseif ($property->type[0] === 'Entity') {
-                    $entityObj['properties'][$property->name] = $this->makeDefinition($app, $property->type[1]);
+                    $entityObj['properties'][$property->name] = $this->makeDefinition($property->type[1]);
                 }
                 else {
                     $type = $this->typeCast($property->type[0]);

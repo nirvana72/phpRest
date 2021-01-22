@@ -1,6 +1,7 @@
 <?php
 namespace PhpRest\Entity;
 
+use PhpRest\Application;
 use PhpRest\Meta\PropertyMeta;
 use PhpRest\Validator\Validator;
 use PhpRest\Exception\BadArgumentException;
@@ -76,31 +77,30 @@ class Entity
     /**
      * 创建实体
      * 
-     * @param Application $app
      * @param array  $data          数据
      * @param bool   $withValidator 是否需要验证
      * @param object $obj           引用
      * @return object
      */
-    public function makeInstanceWithData($app, $data, $withValidator = true, &$obj = null) {
+    public function makeInstanceWithData($data, $withValidator = true, &$obj = null) {
         // 实例化为一个实体类的对象，必需是一个关联数组
         \PhpRest\isAssocArray($data) or \PhpRest\abort(new BadArgumentException("数据源不是一个对象结构, 不能实例化成一个实体类"));
-        if ($obj === null) $obj = $app->make($this->classPath);
+        if ($obj === null) $obj = Application::getInstance()->make($this->classPath);
         foreach ($this->properties as $property) {
             $val = $data[$property->name];
             if (isset($val)) {
                 if ($property->type[0] === 'Entity' || $property->type[0] === 'Entity[]') {
                     $entityClassPath = $property->type[1];
-                    $entity = $app->get(EntityBuilder::class)->build($entityClassPath);
+                    $entity = Application::getInstance()->get(EntityBuilder::class)->build($entityClassPath);
                     if ($property->type[0] === 'Entity[]') {
                         is_array($val) or \PhpRest\abort(new BadArgumentException("数据源 '{$property->name}' 不是数组"));
                         $ary = [];
                         foreach($val as $d) {
-                            $ary[] = $entity->makeInstanceWithData($app, $d, $withValidator);
+                            $ary[] = $entity->makeInstanceWithData($d, $withValidator);
                         }
                         $val = $ary;
                     } else {
-                        $val = $entity->makeInstanceWithData($app, $val, $withValidator);
+                        $val = $entity->makeInstanceWithData($val, $withValidator);
                     }
                 } elseif($withValidator){
                     $needArray = substr($property->type[0], -2) === '[]';
