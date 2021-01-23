@@ -1,6 +1,7 @@
 <?php
 namespace PhpRest\Controller;
 
+use PhpRest\Application;
 use PhpRest\Annotation\AnnotationReader;
 use PhpRest\Annotation\AnnotationBlock;
 use PhpRest\Annotation\AnnotationTag;
@@ -37,7 +38,7 @@ class ControllerBuilder
 
     public function build($classPath) 
     {
-        $cacheKey = 'ControllerBuilder::build' . md5($classPath);
+        $cacheKey = 'ControllerBuilder::build' . md5($classPath . Application::getInstance()->unionId);
         $controller = $this->cache->fetch($cacheKey);
         
         if ($controller === false || 

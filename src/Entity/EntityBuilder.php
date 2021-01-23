@@ -1,6 +1,7 @@
 <?php
 namespace PhpRest\Entity;
 
+use PhpRest\Application;
 use PhpRest\Annotation\AnnotationReader;
 use PhpRest\Annotation\AnnotationBlock;
 use PhpRest\Annotation\AnnotationTag;
@@ -36,7 +37,7 @@ class EntityBuilder
 
     public function build($classPath) 
     {
-        $cacheKey = 'EntityBuilder::build' . md5($classPath);
+        $cacheKey = 'EntityBuilder::build' . md5($classPath . Application::getInstance()->unionId);
         $entity = $this->cache->fetch($cacheKey);
 
         if ($entity === false || 

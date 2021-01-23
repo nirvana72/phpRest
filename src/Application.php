@@ -63,8 +63,11 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         $builder->useAutowiring(false);
         $builder->useAnnotations(true);
         $container = $builder->build();
-        self::$_instance = $container->get(self::class);
-        return self::$_instance;
+        
+        $app = $container->get(self::class);
+        $app->unionId = md5(__DIR__);
+        self::$_instance = $app;
+        return $app;
     }
 
     /**
@@ -286,6 +289,11 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @var string[] Hook类全命名空间
      */
     private $globalHooks = [];
+
+    /**
+     * 唯一ID, 区分apcu缓存用
+     */
+    public $unionId;
 
     /**
      * 单列
