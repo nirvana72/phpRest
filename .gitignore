@@ -1,5 +1,4 @@
 .DS_Store
 vendor/
-cache/
-public/logs/
+composer.lock
 .user.ini
