@@ -30,6 +30,11 @@ class Route
     public $description = '';
 
     /**
+     * @var bool
+     */
+    public $swagger = true;
+
+    /**
      * 返回描述 [类型, json]
      * @var string[]
      */

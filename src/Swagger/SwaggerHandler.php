@@ -70,13 +70,17 @@ class SwaggerHandler
             if ($namesapce !== '' && 0 !== strpos($classPath, $namesapce)) { continue; }
 
             $controller = Application::getInstance()->get(ControllerBuilder::class)->build($classPath);
-
-            $this->addTag($controller->summary, $controller->description);
-            
+            $hasRouteInController = false;
             foreach($controller->routes as $action => $route) {
-                $path = $this->makePath($controller, $route);
-                $method = strtolower($route->method);
-                $this->swagger['paths'][$route->uri][$method] = $path;
+                if ($route->swagger === true) {
+                    $path = $this->makePath($controller, $route);
+                    $method = strtolower($route->method);
+                    $this->swagger['paths'][$route->uri][$method] = $path;
+                    $hasRouteInController = true;
+                }
+            }
+            if ($hasRouteInController === true) {
+                $this->addTag($controller->summary, $controller->description);
             }
         }
 

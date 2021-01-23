@@ -10,6 +10,7 @@ use PhpRest\Controller\Annotation\RouteHandler;
 use PhpRest\Controller\Annotation\ParamHandler;
 use PhpRest\Controller\Annotation\ReturnHandler;
 use PhpRest\Controller\Annotation\HookHandler;
+use PhpRest\Controller\Annotation\SwaggerHandler;
 use PhpRest\Exception\BadCodeException;
 use phpDocumentor\Reflection\DocBlock\Tags\Param as ParamTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Return_ as ReturnTag;
@@ -30,6 +31,7 @@ class ControllerBuilder
         [RouteHandler::class,     "methods.*.children[?name=='route'][]"],
         [HookHandler::class,      "methods.*.children[?name=='hook'][]"],
         [ParamHandler::class,     "methods.*.children[?name=='param'][]"],
+        [SwaggerHandler::class,   "methods.*.children[?name=='swagger'][]"],
         [ReturnHandler::class,    "methods.*.children[?name=='return'][]"]
     ];
 
