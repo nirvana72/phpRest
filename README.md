@@ -65,7 +65,7 @@ RewriteRule ^ index.php [L]
 
 [ORM](https://github.com/nirvana72/phpRest-example/blob/main/App/Controller/OrmController.php)
 
-[swagger](https://github.com/nirvana72/phpRest-example/blob/main/App/Controller/SwaggerReturnController.php)
+[swagger](https://github.com/nirvana72/phpRest-example/blob/main/App/Controller/SwaggerController.php)
 
 [文件上传](https://github.com/nirvana72/phpRest-example/blob/main/App/Controller/FileUploadController.php)
 
