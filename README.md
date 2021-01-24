@@ -2,7 +2,24 @@
 
 PhpRest 是一款纯restful的轻量框架, 此框架参考自 [caoym/phpboot](https://github.com/caoym/phpboot).
 
+~~~
+<?php
+namespace App\Controller;
+
+class IndexController
+{
+    /**
+     * @route GET /
+     */
+    public function index($p1) 
+    {
+        return "p1 = {$p1}";
+    }
+}
+
+~~~
 >框架特点
+* 注释即代码，注释即文档
 * 自动路由
 * 依赖注入
 * 参数绑定
