@@ -7,7 +7,7 @@ class EntityBuildTest
 {
     public function test1() {
         $builder = Application::getInstance()->get(\PhpRest\Entity\EntityBuilder::class);
-        $entity = $builder->build('Example\Entity\User');
+        $entity = $builder->build('App\Entity\SysUser');
         \PhpRest\dump($entity);
     }
 

@@ -17,5 +17,6 @@ class PkHandler
         if ($property === false) { return; }
 
         $property->isPrimaryKey = true;
+        $property->isAutoIncrement = $ann->description === 'auto';
     }
 }
