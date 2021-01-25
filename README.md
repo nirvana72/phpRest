@@ -18,8 +18,10 @@ class IndexController
 }
 
 ~~~
->框架特点
-* 注释即代码，注释即文档
+![swagger](https://nij20190123.oss-cn-shanghai.aliyuncs.com/phpRest/phpRest-index-swagger.png)
+
+# 框架特点
+* 注释即代码，代码即文档
 * 自动路由
 * 依赖注入
 * 参数绑定
