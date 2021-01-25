@@ -38,7 +38,7 @@ class Route
      * 返回描述 [类型, json]
      * @var string[]
      */
-    public $return = ['', ''];
+    public $return = ['void', ''];
 
     /**
      * @var HookMeta[]

@@ -198,16 +198,25 @@ class SwaggerHandler
     // 生成 Response 描述
     private function makeResponse($controller, $route) 
     {
+        $template = ''; // 是否指定了模版
+        if (strpos($route->return[1], '#template=') !== false) {
+            $ary = explode('#template=', $route->return[1]);
+            $route->return[1] = trim($ary[0]);
+            $template = trim($ary[1]);
+        }
+
         $returnType = $route->return[0];
         $isArray = substr($returnType, -2) === '[]';
         if ($isArray) $returnType = substr($returnType, 0, -2);
-        $isRaw = strpos($returnType, '_') === 0;
-        if ($isRaw) $returnType = substr($returnType, 1);
 
         $returnSchema = null;
-        if ($returnSchema === 'void') {
+        
+        if ($returnType === 'void') {
             $returnSchema = $this->makeDefaultResponseDefinition();
-        } elseif (strpos($returnType, '\\') !== false || preg_match("/^[A-Z]{1}$/", $returnType[0])) {
+            return ['description' => '成功返回', 'schema' => $returnSchema];
+        } 
+        
+        if (strpos($returnType, '\\') !== false || preg_match("/^[A-Z]{1}$/", $returnType[0])) {
             // 返回实体类
             $entityClassPath = $returnType;
             if (strpos($entityClassPath, '\\') === false) {
@@ -236,9 +245,9 @@ class SwaggerHandler
             } else {
                 $returnSchema = $schema;
             }
-        } elseif ($returnType === 'number' || $returnType === 'string') {
-            $schema['type'] = $returnType;
-            $schema['default'] = $returnType === 'number'? 1 : 'string';
+        } elseif (in_array($returnType, ['int', 'float', 'string'])) {
+            $schema['type'] = $this->typeCast($returnType);
+            $schema['default'] = $this->defaultCast($schema['type']);
             if ($isArray === true) {
                 $returnSchema['type'] = 'array';
                 $returnSchema['items'] = $schema;
@@ -246,18 +255,18 @@ class SwaggerHandler
                 $returnSchema = $schema;
             }
         }
-        
+
+        // 指定了模版
+        if ($template !== '' && isset($this->config['template'][$template])) {
+            $temp = $this->config['template'][$template];
+            $temp = json_decode(json_encode($temp));
+            $temp = $this->makeObjectResponseSchema($temp, $returnSchema);
+            $returnSchema = ['type' => 'object', 'properties' => $temp];
+        }
+
         if ($returnSchema === null) {
+            // 没有写 @return 或 @return 值不规范, 默认返回 string
             $returnSchema = ['type' =>'string','default' => 'string'];
-        } elseif ($isRaw === false) {
-            $returnSchema = [
-                'type' => 'object',
-                'properties' => [
-                    'ret'  => ['type' => 'integer', 'default' => 1],
-                    'msg'  => ['type' => 'string',  'default' => 'success'],
-                    'data' => $returnSchema
-                ]
-            ];
         }
 
         return ['description' => '成功返回', 'schema' => $returnSchema];
@@ -267,21 +276,24 @@ class SwaggerHandler
     private function makeDefaultResponseDefinition() 
     {
         if (isset($this->swagger['definitions']['Response200']) === false) {
-            $this->swagger['definitions'] = [
-                'Response200' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'ret' => ['type' => 'integer', 'default' => 1],
-                        'msg' => ['type' => 'string',  'default' => 'success']
-                    ]
-                ]
-            ];
+            if (isset($this->config['template']['default'])) {
+                $temp = $this->config['template']['default'];
+                $temp = json_decode(json_encode($temp));
+                $default = $this->makeObjectResponseSchema($temp);
+                $this->swagger['definitions']['Response200'] = ['type' => 'object', 'properties' => $default];
+            } else {
+                $this->swagger['definitions']['Response200'] = ['type' => 'string',  'default' => 'string'];
+            }
         }
-        $returnSchema = ['$ref' => "#/definitions/Response200"];
+        return ['$ref' => "#/definitions/Response200"];
     }
 
     // @return object 后面的json 转换成 ResponseSchema
-    private function makeObjectResponseSchema($obj) 
+    /**
+     * @param object $obj stdClass对象
+     * @param array $refSchema 填充值(如果$obj是个模板的话)
+     */
+    private function makeObjectResponseSchema($obj, $refSchema = null) 
     {
         $schema = [];
         foreach($obj as $k => $v) {
@@ -289,7 +301,7 @@ class SwaggerHandler
                 $schema[$k]['type'] = 'array';
                 if (is_object($v[0])) {
                     $schema[$k]['items']['type'] = 'object';
-                    $schema[$k]['items']['properties'] = $this->makeObjectResponseSchema($v[0]);                     
+                    $schema[$k]['items']['properties'] = $this->makeObjectResponseSchema($v[0], $refSchema);
                 } else {
                     $schema[$k]['items'] = [
                         'type' => $this->valueCast($v[0]),
@@ -299,13 +311,16 @@ class SwaggerHandler
             } elseif (is_object($v)) {
                 $schema[$k] = [
                     'type' => 'object',
-                    'properties' => $this->makeObjectResponseSchema($v)
+                    'properties' => $this->makeObjectResponseSchema($v, $refSchema)
                 ];
             } else {
-                $schema[$k] = [
-                    'type' => $this->valueCast($v),
-                    'default' => $v
-                ];
+                if ($v === '#schema') { // $obj是个模板
+                    if ($refSchema !== null) {
+                        $schema[$k] = $refSchema;
+                    }
+                } else {
+                    $schema[$k] = ['type' => $this->valueCast($v),'default' => $v];
+                }
             }
         }
         return $schema;
