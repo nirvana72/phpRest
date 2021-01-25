@@ -207,7 +207,7 @@ class SwaggerHandler
         $returnSchema = null;
         if ($returnSchema === 'void') {
             $returnSchema = $this->makeDefaultResponseDefinition();
-        } elseif (strpos($returnType, '\\') !== false || preg_match("/^[A-Z]{1}$/", $returnType)) {
+        } elseif (strpos($returnType, '\\') !== false || preg_match("/^[A-Z]{1}$/", $returnType[0])) {
             // 返回实体类
             $entityClassPath = $returnType;
             if (strpos($entityClassPath, '\\') === false) {
