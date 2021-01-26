@@ -89,7 +89,9 @@ if (! function_exists( 'PhpRest\camelizeArrayKey' )) {
     function camelizeArrayKey($ary)
     {
         if (is_array($ary) === false) return $ary;
-        if (\PhpRest\isAssocArray($ary)) { $ary = [ $ary ]; }
+        if (count($ary) === 0) return $ary;
+        $isAssocArray = \PhpRest\isAssocArray($ary);
+        if ($isAssocArray) { $ary = [ $ary ]; }
         $tmpAry = [];
         foreach($ary as $item) {
             $tmp = [];
@@ -99,6 +101,6 @@ if (! function_exists( 'PhpRest\camelizeArrayKey' )) {
             }
             array_push($tmpAry, $tmp);
         }
-        return $tmpAry;
+        return $isAssocArray? $tmpAry[0] : $tmpAry;
     }
 }
