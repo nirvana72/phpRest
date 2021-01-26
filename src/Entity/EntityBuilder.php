@@ -96,6 +96,10 @@ class EntityBuilder
             $block = $this->readAnnotationBlock($property->getDocComment());
             $block->name = $property->getName();
             $block->position = 'property';
+            if ($property->getType()) { // 如果属性前写了类型
+                $type = $property->getType()->getName();
+                $block->otherInfo = ['type' => $type];
+            }
             $reader->properties[$block->name] = $block;
         }
 
@@ -107,6 +111,10 @@ class EntityBuilder
                 $block = $this->readAnnotationBlock($property->getDocComment());
                 $block->name = $i->getName();
                 $block->position = 'property';
+                if ($property->getType()) { // 如果属性前写了类型
+                    $type = $property->getType()->getName();
+                    $block->otherInfo = ['type' => $type];
+                }
                 $reader->properties[$block->name] = $block;
             }
         }

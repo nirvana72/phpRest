@@ -25,4 +25,10 @@ class AnnotationBlock extends AnnotationBase
      * @var AnnotationTag[]
      */
     public $children = [];
+
+    /**
+     * 其它信息
+     * @var mixed
+     */
+    public $otherInfo;
 }
