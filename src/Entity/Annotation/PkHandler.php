@@ -3,7 +3,6 @@ namespace PhpRest\Entity\Annotation;
 
 use PhpRest\Entity\Entity;
 use PhpRest\Annotation\AnnotationTag;
-use PhpRest\Exception\BadCodeException;
 
 class PkHandler
 {
@@ -19,8 +18,5 @@ class PkHandler
 
         $property->isPrimaryKey = true;
         $property->isAutoIncrement = $ann->description === 'auto';
-        if ($property->isAutoIncrement && $property->type[0] !== 'int') {
-            throw new BadCodeException("{$entity->classPath} 属性 {$property->name} 自增类型必须是int");
-        }
     }
 }
