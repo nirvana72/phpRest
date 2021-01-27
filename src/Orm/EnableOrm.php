@@ -3,6 +3,7 @@ namespace PhpRest\Orm;
 
 use PhpRest\Application;
 use PhpRest\Entity\EntityBuilder;
+use PhpRest\Exception\BadCurdException;
 
 trait EnableOrm
 {
@@ -47,6 +48,9 @@ trait EnableOrm
             $data[$property->field] = $this->{$property->name};
         }
         $res = $this->getDb()->insert($entity->table, $data);
+        if ($res->errorInfo()[1] !== null) {
+            throw new BadCurdException($res->errorInfo()[2]);
+        }
         $autoId = $this->getDb()->id();
         if ($autoId !== null && $pkProperty !== null) {
             $this->{$pkProperty} = $autoId;
@@ -66,7 +70,11 @@ trait EnableOrm
                 $data[$property->field] = $this->{$property->name};
             }
         }
-        return $this->getDb()->update($entity->table, $data, $where);
+        $res = $this->getDb()->update($entity->table, $data, $where);
+        if ($res->errorInfo()[1] !== null) {
+            throw new BadCurdException($res->errorInfo()[2]);
+        }
+        return $res;
     }
 
     public static function delete($pk = null) 
@@ -86,15 +94,15 @@ trait EnableOrm
                 }
             }
         }
-        return $this->getDb()->delete($entity->table, $where);
-    }
-
-    private $db = null;
-    
-    private function getDb() {
-        if ($this->db === null) {
-            $this->db = Application::getInstance()->get(\Medoo\Medoo::class);
+        $res = $this->getDb()->delete($entity->table, $where);
+        if ($res->errorInfo()[1] !== null) {
+            throw new BadCurdException($res->errorInfo()[2]);
         }
-        return $this->db;
+        return $res;
+    }
+    
+    private function getDb() 
+    {
+        return Application::getInstance()->get(\Medoo\Medoo::class);
     }
 }
