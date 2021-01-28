@@ -198,7 +198,7 @@ class SwaggerHandler
     // 生成 Response 描述
     private function makeResponse($controller, $route) 
     {
-        $template = ''; // 是否指定了模版
+        $template = 'default'; // 默认使用default模版
         if (strpos($route->return[1], '#template=') !== false) {
             $ary = explode('#template=', $route->return[1]);
             $route->return[1] = trim($ary[0]);
@@ -212,7 +212,11 @@ class SwaggerHandler
         $returnSchema = null;
         
         if ($returnType === 'void') {
-            $returnSchema = $this->makeDefaultResponseDefinition();
+            if ($template === 'null') {
+                $returnSchema = ['type' =>'string', 'default' => 'string'];
+            } else {
+                $returnSchema = $this->makeDefaultResponseDefinition();                
+            }
             return ['description' => '成功返回', 'schema' => $returnSchema];
         } 
         
@@ -257,7 +261,7 @@ class SwaggerHandler
         }
 
         // 指定了模版
-        if ($template !== '' && isset($this->config['template'][$template])) {
+        if ($template !== 'null' && isset($this->config['template'][$template])) {
             $temp = $this->config['template'][$template];
             $temp = json_decode(json_encode($temp));
             $temp = $this->makeObjectResponseSchema($temp, $returnSchema);
@@ -282,7 +286,7 @@ class SwaggerHandler
                 $default = $this->makeObjectResponseSchema($temp);
                 $this->swagger['definitions']['Response200'] = ['type' => 'object', 'properties' => $default];
             } else {
-                $this->swagger['definitions']['Response200'] = ['type' => 'string',  'default' => 'string'];
+                $this->swagger['definitions']['Response200'] = ['type' => 'string', 'default' => 'string'];
             }
         }
         return ['$ref' => "#/definitions/Response200"];
