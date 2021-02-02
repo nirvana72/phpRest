@@ -72,7 +72,7 @@ class SwaggerHandler
             $controller = Application::getInstance()->get(ControllerBuilder::class)->build($classPath);
             $hasRouteInController = false;
             foreach($controller->routes as $action => $route) {
-                if ($route->swagger === true) {
+                if ($route->swagger !== 'hide') {
                     $path = $this->makePath($controller, $route);
                     $method = strtolower($route->method);
                     $this->swagger['paths'][$route->uri][$method] = $path;
@@ -87,6 +87,16 @@ class SwaggerHandler
         // swagger有些对象如果存在，必须是非空对象, 以下代码解决swagger解析报错问题
         if (count($this->swagger['paths']) === 0) {
             $this->swagger['paths'] = new \stdClass();
+        }
+
+        if ($this->config['security'] === true) {
+            $this->swagger['securityDefinitions'] = [
+                'api_key' => [
+                    'type' => 'apiKey',
+                    'name' => 'Authorization',
+                    'in'   => 'header'
+                ]
+            ];
         }
     }
 
@@ -120,7 +130,9 @@ class SwaggerHandler
         $path['description'] = "{$route->description} \r\n\r\n 缓存 @ {$modifyTime}";
         $path['parameters'] = [];
         // $path['operationId'] = '函数名'; // 这个貌似没什么用
-        // $path['security'] = [1]; // 业务上接口是否需要验证在框架层面无法判断. 反正加了个这属性，接口后面会有一个小锁图标
+        if ($this->config['security'] === true && $route->swagger !== '!security') {
+            $path['security'] = [['api_key' => []]];
+        }
         
         // 准备好一个body参数体，POST提交需要参数合并成一个对象
         $bodyParameter = [

@@ -16,6 +16,6 @@ class SwaggerHandler
         $route = $controller->getRoute($method);
         if ($route === false) { return; }
 
-        $route->swagger = $ann->description !== 'false';
+        $route->swagger = $ann->description;
     }
 } 

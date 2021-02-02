@@ -30,9 +30,9 @@ class Route
     public $description = '';
 
     /**
-     * @var bool
+     * @var string
      */
-    public $swagger = true;
+    public $swagger = ''; // 'hide' | '!security'
 
     /**
      * 返回描述 [类型, json]
