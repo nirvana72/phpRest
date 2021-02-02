@@ -4,6 +4,7 @@ namespace PhpRest\Controller\Annotation;
 use PhpRest\Controller\Controller;
 use PhpRest\Annotation\AnnotationTag;
 use PhpRest\Exception\BadCodeException;
+use PhpRest\Application;
 
 class ParamHandler
 {
@@ -21,7 +22,7 @@ class ParamHandler
         $paramMeta = $route->requestHandler->getParamMeta($paramName);
         $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 注解参数 {$paramName} 没有被使用"));
 
-        if ($paramMeta->type[0] === 'Entity') {
+        if ($paramMeta->type[0] === 'Entity') { // 这个在RouteHander中, 如果 function(User $user), type 赋值为Entity
             if (empty($paramType) === false) {
                 // 绑定实体类参数，@param 可以不写类型，默认按参数描述指定
                 // 但是 @param 如果写了类型，就需要验证类型一至
@@ -47,8 +48,10 @@ class ParamHandler
                 $paramMeta->type = [$paramType, $entityClassPath];
             } else {
                 // 否则作为基础类型处理
-                $paramMeta->type = [$paramType, ''];
-                $paramMeta->validation = \PhpRest\Validator\Validator::ruleCast($paramType);
+                if (! empty($paramType)) {
+                    $paramMeta->type = [$paramType, ''];
+                    $paramMeta->validation = \PhpRest\Validator\Validator::ruleCast($paramType);
+                }
             }
         }
 
@@ -62,6 +65,16 @@ class ParamHandler
         list($ret, $tagContent, $paramDesc) = $this->loadInlineTag('rule', $paramDesc);
         $ret >= 0 or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 参数验证描述 rule 格式不正确"));
         if ($ret === 1) {
+            // 使用了验证规则模板
+            if (0 === strpos($tagContent, 'template=')) {
+                $template = str_replace('template=', '', $tagContent);
+                $rules = Application::getInstance()->get("App.paramRules");
+                if (array_key_exists($template, $rules)) {
+                    $tagContent = $rules[$template];
+                } else {
+                    throw new BadCodeException("{$controller->getClassName()}::{$method} 使用的规则模板 {$template} 不存在");
+                }
+            }
             $paramMeta->validation .= "|{$tagContent}";
             $paramMeta->validation = ltrim($paramMeta->validation, '|');
         }
