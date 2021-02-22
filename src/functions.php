@@ -104,3 +104,35 @@ if (! function_exists( 'PhpRest\camelizeArrayKey' )) {
         return $isAssocArray? $tmpAry[0] : $tmpAry;
     }
 }
+
+if (! function_exists( 'PhpRest\AssocArraySearch' )) {
+  /**
+   * 将关联数组列表中条件查询
+   * @param array $rows
+   * @param array $filter
+   * @param bool $findAll 是否查询所有
+   * @return array
+   */
+  function AssocArraySearch($rows, $filter, $findAll = false)
+  {
+      $result = [];
+      foreach($rows as $row) {
+          $march = true;
+          foreach($filter as $k => $v) {
+              if ($row[$k] !== $v) {
+                  $march = false;
+                  break;
+              }
+          }
+          if ($march === true) {
+              if ($findAll === false) {
+                  return $row;
+              } else {
+                  $result[] = $row;
+              }
+          }
+      }
+      if ($findAll === false) return null;
+      return $result;
+  }
+}
