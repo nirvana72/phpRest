@@ -88,5 +88,7 @@ RewriteRule ^ index.php [L]
 
 [文件上传](https://github.com/nirvana72/phpRest-example/blob/main/App/Controller/FileUploadController.php)
 
+[事件驱动](https://github.com/nirvana72/phpRest-example/blob/main/App/Controller/EventController.php)
+
 # 其它 Other
 框架默认缓存实现是文件缓存（Filesystem），生产环境推安装 apcu 扩展
