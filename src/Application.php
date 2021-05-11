@@ -52,10 +52,10 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         // 缓存对象
         if( function_exists('apcu_fetch') ) {
             $default += [ Cache::class => \DI\create(ApcuCache::class) ];
-            // $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
         } else {
             $default += [ Cache::class => \DI\autowire(FilesystemCache::class)->constructorParameter('directory', sys_get_temp_dir()) ];
         }
+        // $default += [ Cache::class => \DI\autowire(\Doctrine\Common\Cache\VoidCache::class) ];
 
         $builder = new \DI\ContainerBuilder();
         $builder->addDefinitions($default);
@@ -80,18 +80,46 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      */
     public function scanRoutesFromPath($controllerPath, $namespace) 
     {
-        $d = dir($controllerPath);
+        $this->scanPath($controllerPath, $namespace, 'Controller.php', function($classPath) {
+            $this->scanRoutesFromClass($classPath);
+        });
+    }
+
+    /**
+     * 遍历加载事件文件Listener
+     * 
+     * 只会加载 'Listener.php' 结尾的PHP文件
+     * 
+     * @param string $listenerPath Listener所在目录
+     * @param string $namespace Listener所在命名空间
+     */
+    public function scanListenerFromPath($listenerPath, $namespace) 
+    {
+        $this->scanPath($listenerPath, $namespace, 'Listener.php', function($classPath) {
+            is_subclass_of($classPath, \PhpRest\Event\EventInterface::class) or \PhpRest\abort(new BadCodeException("{$classPath} 必须继承于 \PhpRest\Event\EventInterface"));
+
+            $ctlClass = $this->get($classPath);
+            $events = call_user_func([$ctlClass, 'listen']);
+            foreach($events as $event) {
+                $this->events[$event][] = $classPath;
+            }
+        });
+    }
+
+    private function scanPath($filePath, $namespace, $fileEndStr, $callback)
+    {
+        $fileEndStrLength = strlen($fileEndStr);
+        $d = dir($filePath);
         while (($entry = $d->read()) !== false){
             if ($entry == '.' || $entry == '..') { continue; }
-            $path = $controllerPath . '/' . $entry;
+            $path = $filePath . '/' . $entry;
             if (is_file($path)) {
-                // if ($entry === 'IndexController.php') {
-                if (substr($entry, -14) === 'Controller.php') {
+                if (substr($entry, -$fileEndStrLength) === $fileEndStr) {
                     $classPath = $namespace . '\\' . substr($entry, 0, -4);
-                    $this->scanRoutesFromClass($classPath);
+                    $callback($classPath);                    
                 }
             } else {
-                $this->scanRoutesFromPath($path, $namespace . '\\' . $entry);
+                $this->scanPath($path, $namespace . '\\' . $entry, $fileEndStr, $callback);
             }
         }
         $d->close();
@@ -262,6 +290,11 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         return $this->controllers;
     }
 
+    public function getEvent($eventName) 
+    {
+        return $this->events[$eventName];
+    }
+
     /** 
      * @Inject
      * @var \DI\Container 
@@ -279,9 +312,15 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
 
     /** 
      * 所有controller类名
-     * @var string 
+     * @var string[]
      * */
     private $controllers = [];
+
+    /** 
+     * 所有注册的事件对象
+     * @var string[] 
+     * */
+    private $events = [];
 
     /**
      * 全局Hook
