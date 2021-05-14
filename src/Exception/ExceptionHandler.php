@@ -11,7 +11,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
      * @param \Throwable $e
      * @return Response
      */
-    public function render(\Throwable $e)
+    public function render(\Throwable $e): Response
     {
         $response = Application::getInstance()->make(Response::class);
         $response->setContent($e->getMessage());

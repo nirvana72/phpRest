@@ -51,7 +51,7 @@ class Entity
     /**
      * @param string $classPath 实体类的命名空间
      */
-    public function __construct($classPath) 
+    public function __construct(string $classPath)
     {
         $this->classPath = $classPath;
 

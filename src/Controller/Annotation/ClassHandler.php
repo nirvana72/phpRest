@@ -7,7 +7,7 @@ use PhpRest\Annotation\AnnotationBlock;
 class ClassHandler
 {
     /**
-     * @param Controller $container
+     * @param Controller $controller
      * @param AnnotationBlock $ann
      */
     public function __invoke(Controller $controller, AnnotationBlock $ann) 

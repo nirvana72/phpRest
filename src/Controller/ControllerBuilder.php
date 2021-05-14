@@ -25,7 +25,7 @@ class ControllerBuilder
      */
     private $cache;
 
-    private $annotationnHandlers = [
+    private $annotationHandlers = [
         [ClassHandler::class,     'class'],
         [PathHandler::class,      "class.children[?name=='path']"],
         [HookHandler::class,      "class.children[?name=='hook']"],
@@ -51,7 +51,7 @@ class ControllerBuilder
             $controller->modifyTimespan = filemtime($controller->filePath);
             
             $annotationReader = $this->buildAnnotationReader($classRef);
-            foreach ($this->annotationnHandlers as $handler) {
+            foreach ($this->annotationHandlers as $handler) {
                 list($class, $expression) = $handler;
                 $annotations = \JmesPath\search($expression, $annotationReader);
                 if ($annotations !== null) {
@@ -76,7 +76,7 @@ class ControllerBuilder
      * @param ReflectionClass $classRef controller反射类
      * @return AnnotationReader
      */
-    private function buildAnnotationReader($classRef) 
+    private function buildAnnotationReader(\ReflectionClass $classRef): AnnotationReader
     {
         $reader = new AnnotationReader();
         $docComment = $classRef->getDocComment();
@@ -87,6 +87,8 @@ class ControllerBuilder
         } else {
             $reader->class = $this->readAnnotationBlock($docComment);
         }
+
+        $reader->class->name = $classRef->getName();
         $reader->class->summary = $reader->class->summary?:$classRef->getShortName();
         $reader->class->position = 'class';
         
@@ -113,7 +115,7 @@ class ControllerBuilder
      * @param string $docComment 注解内容
      * @return AnnotationBlock
      */
-    private function readAnnotationBlock($docComment) 
+    private function readAnnotationBlock(string $docComment): AnnotationBlock
     {
         $factory = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
         $docBlock = $factory->create($docComment);

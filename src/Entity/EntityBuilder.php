@@ -23,7 +23,7 @@ class EntityBuilder
      */
     private $cache;
 
-    private $annotationnHandlers = [
+    private $annotationHandlers = [
         [ClassHandler::class,     'class'],
         [TableHandler::class,     "class.children[?name=='table']"],
         [PropertyHandler::class,  'properties'],
@@ -48,7 +48,7 @@ class EntityBuilder
             $entity->modifyTimespan = filemtime($entity->filePath);
 
             $annotationReader = $this->buildAnnotationReader($classRef);
-            foreach ($this->annotationnHandlers as $handler) {
+            foreach ($this->annotationHandlers as $handler) {
                 list($class, $expression) = $handler;
                 $annotations = \JmesPath\search($expression, $annotationReader);
                 if ($annotations !== null) {
@@ -73,7 +73,8 @@ class EntityBuilder
      * @param ReflectionClass $classRef entity反射类
      * @return AnnotationReader
      */
-    private function buildAnnotationReader($classRef) {
+    private function buildAnnotationReader(\ReflectionClass $classRef): AnnotationReader
+    {
         $reader = new AnnotationReader();
         $docComment = $classRef->getDocComment();
         if ($docComment === false) { 
@@ -101,10 +102,9 @@ class EntityBuilder
 
         while ($classRef = $classRef->getParentClass()) {
             foreach ($classRef->getProperties(\ReflectionProperty::IS_PUBLIC) as $i) {
-                if ($property->isStatic()  === true || 
-                    $property->isPublic()  === false) { continue; }
+                if ($i->isStatic()  === true || $i->isPublic()  === false) { continue; }
 
-                $block = $this->readAnnotationBlock($property->getDocComment());
+                $block = $this->readAnnotationBlock($i->getDocComment());
                 $block->name = $i->getName();
                 $block->position = 'property';
                 $reader->properties[$block->name] = $block;
@@ -120,13 +120,13 @@ class EntityBuilder
      * @param string $docComment 注解内容
      * @return AnnotationBlock
      */
-    private function readAnnotationBlock($docComment) 
+    private function readAnnotationBlock(string $docComment): AnnotationBlock
     {
         $annBlock = new AnnotationBlock();
-        if ($docComment !== false) {
+        if ($docComment != false) {
             $factory = \phpDocumentor\Reflection\DocBlockFactory::createInstance();
             $docBlock = $factory->create($docComment);
-            $annBlock->summary     = $docBlock->getSummary();
+            $annBlock->summary = $docBlock->getSummary();
             // $annBlock->description = $docBlock->getDescription()->render(); 属性只要摘要，不需要描述，收集了也没地方展示
             $tags = $docBlock->getTags(); 
             foreach ($tags as $tag) {

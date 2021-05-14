@@ -9,7 +9,7 @@ use PhpRest\Application;
 class ParamHandler
 {
     /**
-     * @param Controller $container
+     * @param Controller $controller
      * @param AnnotationTag $ann
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
@@ -22,7 +22,7 @@ class ParamHandler
         $paramMeta = $route->requestHandler->getParamMeta($paramName);
         $paramMeta or \PhpRest\abort(new BadCodeException("{$controller->getClassName()}::{$method} 注解参数 {$paramName} 没有被使用"));
 
-        if ($paramMeta->type[0] === 'Entity') { // 这个在RouteHander中, 如果 function(User $user), type 赋值为Entity
+        if ($paramMeta->type[0] === 'Entity') { // 这个在RouteHandler中, 如果 function(User $user), type 赋值为Entity
             if (empty($paramType) === false) {
                 // 绑定实体类参数，@param 可以不写类型，默认按参数描述指定
                 // 但是 @param 如果写了类型，就需要验证类型一至
@@ -83,7 +83,8 @@ class ParamHandler
     }
 
     // $desc = 'p1 {@bind request.user} {@rule regax=/^[a-z]{5,10}$/}';
-    private function loadInlineTag($tagName, $desc) {
+    private function loadInlineTag($tagName, $desc): array
+    {
         $tag = '';
         $tagName = '{@' . $tagName;
         $stIndex = strpos($desc, $tagName);

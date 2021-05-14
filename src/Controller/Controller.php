@@ -54,7 +54,7 @@ class Controller
     /**
      * @param string $classPath controller类的命名空间
      */
-    public function __construct($classPath) 
+    public function __construct(string $classPath)
     {
         $this->classPath = $classPath;
         // 默认路由 OrderTypeController = /order_type
@@ -71,7 +71,7 @@ class Controller
      * @param string $actionName class method
      * @return void
      */
-    public function addRoute($actionName, Route $route) 
+    public function addRoute(string $actionName, Route $route)
     {
         !array_key_exists($actionName, $this->routes) or \PhpRest\abort(new BadCodeException("路由重复 {$this->classPath} {$actionName}"));
         $this->routes[$actionName] = $route;
@@ -83,7 +83,7 @@ class Controller
      * @param $actionName
      * @return Route|false
      */
-    public function getRoute($actionName) 
+    public function getRoute($actionName)
     {
         if (array_key_exists($actionName, $this->routes)){
             return $this->routes[$actionName];
@@ -95,7 +95,7 @@ class Controller
      * 返回controller类名，返回错误时用
      * @return string
      */
-    public function getClassName() 
+    public function getClassName(): string
     {
         return end(explode('\\', $this->classPath));
     }

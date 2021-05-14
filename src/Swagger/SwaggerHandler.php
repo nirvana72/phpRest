@@ -13,9 +13,9 @@ class SwaggerHandler
      * 把所有接口注册成一个swagger
      * 
      * @param string $route
-     * @param callable $callback
+     * @param callable|null $callback
      */
-    public static function register($route, $callback = null) 
+    public static function register(string $route, callable $callback = null)
     {
         Application::getInstance()->addRoute('GET', $route, function ($request) use($callback){
             $swaggerHandler = Application::getInstance()->get(SwaggerHandler::class);
@@ -39,14 +39,14 @@ class SwaggerHandler
      * ]
      * 
      * @param array $group
-     * @param callable $callback
+     * @param callable|null $callback
      */
-    public static function registerGroup($group, $callback = null) 
+    public static function registerGroup(array $group, callable $callback = null)
     {        
-        foreach($group as $key => $namesapce) {
-            Application::getInstance()->addRoute('GET', "/swagger/{$key}.json", function ($request) use($callback, $namesapce, $key){
+        foreach($group as $key => $namespace) {
+            Application::getInstance()->addRoute('GET', "/swagger/{$key}.json", function ($request) use($callback, $namespace, $key){
                 $swaggerHandler = Application::getInstance()->get(SwaggerHandler::class);
-                $swaggerHandler->build($namesapce);
+                $swaggerHandler->build($namespace);
                 if ($callback) {
                     $callback($swaggerHandler->swagger, $key);
                 }
@@ -57,7 +57,7 @@ class SwaggerHandler
         }
     }
 
-    public function build($namesapce = '') 
+    public function build(string $namespace = '')
     {
         $this->swagger['swagger'] = '2.0';
         $this->swagger['info'] = $this->makeInfo();
@@ -67,7 +67,7 @@ class SwaggerHandler
         $this->swagger['paths'] = [];
 
         foreach(Application::getInstance()->getControllers() as $classPath) {
-            if ($namesapce !== '' && 0 !== strpos($classPath, $namesapce)) { continue; }
+            if ($namespace !== '' && 0 !== strpos($classPath, $namespace)) { continue; }
 
             $controller = Application::getInstance()->get(ControllerBuilder::class)->build($classPath);
             $hasRouteInController = false;
@@ -101,7 +101,7 @@ class SwaggerHandler
     }
 
     // 基本信息
-    private function makeInfo() 
+    private function makeInfo(): array
     {
         return [
             'title'       => "{$this->appName} - {$this->appEnv}",
@@ -120,7 +120,7 @@ class SwaggerHandler
     }
 
     // 循环调用，创建API
-    private function makePath($controller, $route) 
+    private function makePath($controller, $route): array
     {
         $modifyTime = date("Y-m-d H:i:s", $controller->modifyTimespan);
 
@@ -208,7 +208,7 @@ class SwaggerHandler
     }
 
     // 生成 Response 描述
-    private function makeResponse($controller, $route) 
+    private function makeResponse($controller, $route): array
     {
         $template = 'default'; // 默认使用default模版
         if (strpos($route->return[1], '#template=') !== false) {
@@ -289,7 +289,7 @@ class SwaggerHandler
     }
 
     // 创建默认的成功返回引用
-    private function makeDefaultResponseDefinition() 
+    private function makeDefaultResponseDefinition(): array
     {
         if (isset($this->swagger['definitions']['Response200']) === false) {
             if (isset($this->config['template']['default'])) {
@@ -309,7 +309,7 @@ class SwaggerHandler
      * @param object $obj stdClass对象
      * @param array $refSchema 填充值(如果$obj是个模板的话)
      */
-    private function makeObjectResponseSchema($obj, $refSchema = null) 
+    private function makeObjectResponseSchema($obj, $refSchema = null): array
     {
         $schema = [];
         foreach($obj as $k => $v) {
@@ -358,7 +358,7 @@ class SwaggerHandler
     }
 
     // 如果是实体类， 创建引用
-    private function makeDefinition($entityClassPath) 
+    private function makeDefinition($entityClassPath): array
     {
         $defName = str_replace('\\', '', $entityClassPath);
         if (isset($this->swagger['definitions'][$defName]) === false) {
@@ -404,7 +404,7 @@ class SwaggerHandler
     }
 
     // 把框架的参数类型，转成swagger支持的类型
-    private function typeCast($type) 
+    private function typeCast($type): string
     {
         if(substr($type, -2) === '[]')  return 'array';
         if(in_array($type, ['int', 'integer'])) return 'integer';
@@ -426,7 +426,8 @@ class SwaggerHandler
     }
 
     // 识别值是什么类型
-    private function valueCast($val) {
+    private function valueCast($val): string
+    {
         if(is_integer($val)) return 'integer';
         if(is_float($val)) return 'number';
         if(is_bool($val)) return 'boolen';

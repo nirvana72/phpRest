@@ -7,7 +7,7 @@ use PhpRest\Annotation\AnnotationTag;
 class PathHandler
 {
     /**
-     * @param Controller $container
+     * @param Controller $controller
      * @param AnnotationTag $ann
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 

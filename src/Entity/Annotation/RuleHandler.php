@@ -9,7 +9,7 @@ use PhpRest\Application;
 class RuleHandler
 {
     /**
-     * @param Entity $container
+     * @param Entity $entity
      * @param AnnotationTag $ann
      */
     public function __invoke(Entity $entity, AnnotationTag $ann) 
@@ -29,7 +29,7 @@ class RuleHandler
             if (array_key_exists($template, $rules)) {
                 $ann->description = $rules[$template];
             } else {
-                throw new BadCodeException("{$controller->getClassName()}::{$method} 使用的规则模板 {$template} 不存在");
+                throw new BadCodeException("{$entity->classPath}::{$ann->name} 使用的规则模板 {$template} 不存在");
             }
         }
 

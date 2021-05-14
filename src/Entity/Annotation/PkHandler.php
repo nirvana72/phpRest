@@ -7,7 +7,7 @@ use PhpRest\Annotation\AnnotationTag;
 class PkHandler
 {
     /**
-     * @param Entity $container
+     * @param Entity $entity
      * @param AnnotationTag $ann
      */
     public function __invoke(Entity $entity, AnnotationTag $ann) 

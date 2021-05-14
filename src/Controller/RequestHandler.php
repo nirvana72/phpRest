@@ -21,7 +21,7 @@ class RequestHandler
      * 
      * @param ParamMeta $meta meta
      */
-    public function addParamMeta($meta) 
+    public function addParamMeta(ParamMeta $meta)
     {
         if(array_key_exists($meta->name, $this->paramMetas)) {
             // 如果重复, 复盖部分属性, 唯一场景(先定义了path参数，又收集function参数，复盖类型和验证)
@@ -37,7 +37,7 @@ class RequestHandler
      * @param $name
      * @return ParamMeta|null
      */
-    public function getParamMeta($name)
+    public function getParamMeta($name): ?ParamMeta
     {
         foreach ($this->paramMetas as $meta){
             if($meta->name == $name){
@@ -53,7 +53,7 @@ class RequestHandler
      * @param Request $request
      * @return array
      */
-    public function makeParams($request) 
+    public function makeParams(Request $request): array
     {
         $vld = new Validator([], [], 'zh-cn');
         $requestArray = new ArrayAdaptor($request);

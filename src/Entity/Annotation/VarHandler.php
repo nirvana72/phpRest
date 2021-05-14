@@ -8,7 +8,7 @@ use PhpRest\Exception\BadCodeException;
 class VarHandler
 {
     /**
-     * @param Entity $container
+     * @param Entity $entity
      * @param AnnotationTag $ann
      */
     public function __invoke(Entity $entity, AnnotationTag $ann) 

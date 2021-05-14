@@ -4,6 +4,12 @@ namespace PhpRest\Annotation;
 class AnnotationBlock extends AnnotationBase
 {
     /**
+     * 类名或方法名
+     * @var string
+     */
+    public $name = '';
+
+    /**
      * 摘要
      * @var string
      */

@@ -34,7 +34,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @param string|array $conf
      * @return Application
      */
-    public static function create($conf = [])
+    public static function create($conf = []): Application
     {
         $default = [
             // 默认request对象来自 symfony
@@ -78,7 +78,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @param string $controllerPath controller所在目录
      * @param string $namespace controller所在命名空间
      */
-    public function scanRoutesFromPath($controllerPath, $namespace) 
+    public function scanRoutesFromPath(string $controllerPath, string $namespace)
     {
         $this->scanPath($controllerPath, $namespace, 'Controller.php', function($classPath) {
             $this->scanRoutesFromClass($classPath);
@@ -93,9 +93,9 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @param string $listenerPath Listener所在目录
      * @param string $namespace Listener所在命名空间
      */
-    public function scanListenerFromPath($listenerPath, $namespace) 
+    public function scanListenerFromPath(string $listenerPath, string $namespace)
     {
-        $this->scanPath($listenerPath, $namespace, 'Listener.php', function($classPath) {
+        $this->scanPath($listenerPath, $namespace, 'Listener.php', function(string $classPath) {
             is_subclass_of($classPath, \PhpRest\Event\EventInterface::class) or \PhpRest\abort(new BadCodeException("{$classPath} 必须继承于 \PhpRest\Event\EventInterface"));
 
             $ctlClass = $this->get($classPath);
@@ -130,7 +130,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * 
      * @param string $classPath controller命名空间全路径
      */
-    private function scanRoutesFromClass($classPath) 
+    private function scanRoutesFromClass(string $classPath)
     {
         try {
             $controller = $this->get(ControllerBuilder::class)->build($classPath);
@@ -217,7 +217,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     /**
      * 获取单列
      */
-    public static function getInstance() 
+    public static function getInstance() : Application
     {
         return self::$_instance;
     }
@@ -225,7 +225,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     /**
      * impl Psr\Container\ContainerInterface
      */
-    public function get($id) 
+    public function get($id)
     {
         return $this->container->get($id);
     }
@@ -254,7 +254,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
         return $this->container->call($callable, $parameters);
     }
 
-    public static function createRequestFromSymfony()
+    public static function createRequestFromSymfony(): Request
     {
         $request = Request::createFromGlobals();
         $contentType = $request->headers->get('CONTENT_TYPE');
@@ -268,9 +268,9 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     }
     
     /**
-     * @param string $globalHooks
+     * @param string $globalHook
      */
-    public function addGlobalHook($globalHook)
+    public function addGlobalHook(string $globalHook)
     {
         $this->globalHooks[] = $globalHook;
     }
@@ -280,17 +280,17 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
      * @param string $uri
      * @param callable $handler function(Request $request):Response
      */
-    public function addRoute($method, $uri, callable $handler)
+    public function addRoute(string $method, string $uri, callable $handler)
     {
         $this->routes[] = [$method, $uri, $handler];
     }
 
-    public function getControllers() 
+    public function getControllers(): array
     {
         return $this->controllers;
     }
 
-    public function getEvent($eventName) 
+    public function getEvent($eventName) : array
     {
         return $this->events[$eventName];
     }
@@ -318,7 +318,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
 
     /** 
      * 所有注册的事件对象
-     * @var string[] 
+     * @var array
      * */
     private $events = [];
 

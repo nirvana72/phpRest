@@ -55,7 +55,7 @@ class Route
      * @param string $classPath
      * @param string $actionName
      */
-    public function invoke($request, $classPath, $actionName) 
+    public function invoke(Request $request, string $classPath, string $actionName)
     {
         $next = function($request) use ($classPath, $actionName) {
             $params = $this->requestHandler->makeParams($request);

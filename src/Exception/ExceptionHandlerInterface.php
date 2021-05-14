@@ -9,5 +9,5 @@ interface ExceptionHandlerInterface
      * @param \Throwable $e
      * @return Response
      */
-    public function render(\Throwable $e);
+    public function render(\Throwable $e): Response;
 }

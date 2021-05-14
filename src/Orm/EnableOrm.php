@@ -11,9 +11,9 @@ trait EnableOrm
      * 填充数据
      * 
      * @param array $data 数据源
-     * @param bool  $withValidator 是否需要验证
+     * @param bool $withValidator 是否需要验证
      */
-    public function fill($data, $withValidator = true)
+    public function fill(array $data, bool $withValidator = true)
     {
         $entity = Application::getInstance()->get(EntityBuilder::class)->build(self::class);
         return $entity->makeInstanceWithData($data, $withValidator, $this);

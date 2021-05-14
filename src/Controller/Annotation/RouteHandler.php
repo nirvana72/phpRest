@@ -5,15 +5,15 @@ use PhpRest\Annotation\AnnotationTag;
 use PhpRest\Controller\Controller;
 use PhpRest\Controller\Route;
 use PhpRest\Controller\RequestHandler;
-use PhpRest\Controller\ResponseHandler;
 use PhpRest\Meta\ParamMeta;
 use PhpRest\Exception\BadCodeException;
 
 class RouteHandler
 {
     /**
-     * @param Controller $container
+     * @param Controller $controller
      * @param AnnotationTag $ann
+     * @throws \Throwable
      */
     public function __invoke(Controller $controller, AnnotationTag $ann) 
     {
