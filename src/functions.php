@@ -47,9 +47,9 @@ if (! function_exists( 'PhpRest\dump' )) {
 if (! function_exists( 'PhpRest\uncamelize' )) {
     /**
      * 驼峰转下划线
-     * @return void
+     * @return string
      */
-    function uncamelize($str, $separator = '_')
+    function uncamelize($str, $separator = '_'): string
     {
         return strtolower(preg_replace('/([a-z])([A-Z])/', "$1" . $separator . "$2", $str));
     }
@@ -58,9 +58,9 @@ if (! function_exists( 'PhpRest\uncamelize' )) {
 if (! function_exists( 'PhpRest\camelize' )) {
     /**
      * 下划线转驼峰
-     * @return void
+     * @return string
      */
-    function camelize($str, $separator = '_')
+    function camelize($str, $separator = '_'): string
     {
         $str = $separator. str_replace($separator, ' ', strtolower($str));
         return ltrim(str_replace(' ', '', ucwords($str)), $separator );
@@ -73,7 +73,7 @@ if (! function_exists( 'PhpRest\isAssocArray' )) {
      * @param array $ary
      * @return bool
      */
-    function isAssocArray($ary)
+    function isAssocArray(array $ary): bool
     {
         if (is_array($ary) === false) return false;
         return array_keys($ary) !== range(0, count($ary) - 1);
@@ -86,7 +86,7 @@ if (! function_exists( 'PhpRest\camelizeArrayKey' )) {
      * @param array $ary
      * @return array
      */
-    function camelizeArrayKey($ary)
+    function camelizeArrayKey(array $ary): array
     {
         if (is_array($ary) === false) return $ary;
         if (count($ary) === 0) return $ary;
@@ -113,7 +113,7 @@ if (! function_exists( 'PhpRest\AssocArraySearch' )) {
    * @param bool $findAll 是否查询所有
    * @return array
    */
-  function AssocArraySearch($rows, $filter, $findAll = false)
+  function AssocArraySearch(array $rows, array $filter, bool $findAll = false): ?array
   {
       $result = [];
       foreach($rows as $row) {

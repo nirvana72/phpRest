@@ -22,17 +22,20 @@ class ApiResult
         $this->msg = $msg;
     }
 
-    public static function success($data = null) {
+    public static function success($data = null): ApiResult
+    {
         $result = new ApiResult(1, 'success');
         $result->data = $data;
         return $result;
     }
 
-    public static function error($msg, $ret = -1) {
+    public static function error($msg, $ret = -1): ApiResult
+    {
         return new ApiResult($ret, $msg);
     }
 
-    public static function assert($flag, $msg = []) {
+    public static function assert($flag, $msg = []): ApiResult
+    {
         $sucMsg = $msg[0]?:'success';
         $errMsg = $msg[1]?:'出错了';
         $ret = $flag ? 1 : -1;
