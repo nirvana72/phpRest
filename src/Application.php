@@ -81,7 +81,18 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
     public function scanRoutesFromPath(string $controllerPath, string $namespace)
     {
         $this->scanPath($controllerPath, $namespace, 'Controller.php', function($classPath) {
-            $this->scanRoutesFromClass($classPath);
+            // 遍历加载 controller 类, string $classPath controller命名空间全路径
+            try {
+                $controller = $this->get(ControllerBuilder::class)->build($classPath);
+                foreach ($controller->routes as $actionName => $route) {
+                    $this->routes[] = [$route->method, $route->uri, [$classPath, $actionName]];
+                }
+                $this->controllers[] = $classPath;
+            } catch (\Throwable $e) {
+                $exceptionHandler = $this->get(ExceptionHandlerInterface::class);
+                $exceptionHandler->render($e)->send();
+                exit;
+            }
         });
     }
 
@@ -123,26 +134,6 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
             }
         }
         $d->close();
-    }
-
-    /**
-     * 遍历加载 controller 类
-     * 
-     * @param string $classPath controller命名空间全路径
-     */
-    private function scanRoutesFromClass(string $classPath)
-    {
-        try {
-            $controller = $this->get(ControllerBuilder::class)->build($classPath);
-            foreach ($controller->routes as $actionName => $route) {
-                $this->routes[] = [$route->method, $route->uri, [$classPath, $actionName]];
-            }
-            $this->controllers[] = $classPath;
-        } catch (\Throwable $e) {
-            $exceptionHandler = $this->get(ExceptionHandlerInterface::class);
-            $exceptionHandler->render($e)->send();
-            exit;
-        }
     }
 
     /**

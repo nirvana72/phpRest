@@ -15,7 +15,6 @@ use PhpRest\Controller\Annotation\SwaggerHandler;
 use PhpRest\Exception\BadCodeException;
 use phpDocumentor\Reflection\DocBlock\Tags\Param as ParamTag;
 use phpDocumentor\Reflection\DocBlock\Tags\Return_ as ReturnTag;
-use Doctrine\Common\Cache\Cache;
 
 class ControllerBuilder
 {
@@ -36,7 +35,7 @@ class ControllerBuilder
         [ReturnHandler::class,    "methods.*.children[?name=='return'][]"]
     ];
 
-    public function build($classPath) 
+    public function build($classPath): Controller
     {
         $cacheKey = 'ControllerBuilder::build' . md5($classPath . Application::getInstance()->unionId);
         $controller = $this->cache->fetch($cacheKey);

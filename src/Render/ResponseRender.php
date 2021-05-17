@@ -8,8 +8,9 @@ class ResponseRender implements ResponseRenderInterface
 {
     /**
      * @param $return
+     * @return Response
      */
-    public function render($return)
+    public function render($return): Response
     {
         //直接返回Response时, 对return不再做映射
         if($return instanceof Response){ 

@@ -2,6 +2,7 @@
 namespace PhpRest\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use PhpRest\Render\ResponseRenderInterface;
 use PhpRest\Application;
 use PhpRest\Meta\HookMeta;
@@ -54,8 +55,9 @@ class Route
      * @param Request $request
      * @param string $classPath
      * @param string $actionName
+     * @return Response
      */
-    public function invoke(Request $request, string $classPath, string $actionName)
+    public function invoke(Request $request, string $classPath, string $actionName): Response
     {
         $next = function($request) use ($classPath, $actionName) {
             $params = $this->requestHandler->makeParams($request);

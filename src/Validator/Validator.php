@@ -48,7 +48,7 @@ class Validator extends \Valitron\Validator
      * @param string $type
      * @return 验证规则
      */
-    public static function ruleCast($type) {
+    public static function ruleCast(string $type): string {
         if(empty($type)) {
             return '';
         }
