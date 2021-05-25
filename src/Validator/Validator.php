@@ -17,7 +17,7 @@ class Validator extends \Valitron\Validator
      * @param string $ruleStr
      * @param string $fields
      */
-    public function rule($ruleStr, $fields) 
+    public function rule($ruleStr, $fields)
     {
         $ruleAry = explode('|', $ruleStr);
         foreach($ruleAry as $r) {
@@ -46,7 +46,7 @@ class Validator extends \Valitron\Validator
 
     /**
      * @param string $type
-     * @return 验证规则
+     * @return string 验证规则
      */
     public static function ruleCast(string $type): string {
         if(empty($type)) {
