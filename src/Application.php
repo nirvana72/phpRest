@@ -283,7 +283,7 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
 
     public function getEvent($eventName) : array
     {
-        return $this->events[$eventName];
+        return $this->events[$eventName] ?: [];
     }
 
     /** 
