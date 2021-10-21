@@ -48,6 +48,9 @@ trait EnableOrm
             $data[$property->field] = $this->{$property->name};
         }
         $res = $this->getDb()->insert($entity->table, $data);
+        if ($res === null) {
+            throw new BadCurdException("insert {$entity->table} error");
+        }
         if ($res->errorInfo()[1] !== null) {
             throw new BadCurdException($res->errorInfo()[2]);
         }
@@ -71,6 +74,9 @@ trait EnableOrm
             }
         }
         $res = $this->getDb()->update($entity->table, $data, $where);
+        if ($res === null) {
+            throw new BadCurdException("update {$entity->table} error");
+        }
         if ($res->errorInfo()[1] !== null) {
             throw new BadCurdException($res->errorInfo()[2]);
         }
@@ -95,6 +101,9 @@ trait EnableOrm
             }
         }
         $res = $this->getDb()->delete($entity->table, $where);
+        if ($res === null) {
+            throw new BadCurdException("delete {$entity->table} error");
+        }
         if ($res->errorInfo()[1] !== null) {
             throw new BadCurdException($res->errorInfo()[2]);
         }
