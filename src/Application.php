@@ -125,6 +125,8 @@ class Application implements ContainerInterface, FactoryInterface, InvokerInterf
             if ($entry == '.' || $entry == '..') { continue; }
             $path = $filePath . '/' . $entry;
             if (is_file($path)) {
+                // 如果文件名以Base开头，则认为是父类, 不收集
+                if (substr($entry, 0, 4) === 'Base') { continue; }
                 if (substr($entry, -$fileEndStrLength) === $fileEndStr) {
                     $classPath = $namespace . '\\' . substr($entry, 0, -4);
                     $callback($classPath);                    
